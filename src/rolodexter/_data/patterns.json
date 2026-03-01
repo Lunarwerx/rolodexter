@@ -1,11 +1,12 @@
 {
-  "version": "2.1.0",
-  "description": "Rolodexter master field pattern registry — the universal contact data truth table.  v2.0 removes per-service profiles in favour of smart normalisation. v2.1 adds source_id, source_service, subscribed, verified fields; phonenumbers E.164 support; nested payload depth.",
+  "version": "2.3.0",
+  "description": "Rolodexter master field pattern registry — the universal contact data truth table.  v2.0 removes per-service profiles in favour of smart normalisation. v2.1 adds source_id, source_service, subscribed, verified fields; phonenumbers E.164 support; nested payload depth. v2.2 adds on-demand i18n, built-in phone module. v2.3 smus_bark audit: 7 new canonical fields, 130+ new aliases, alias collision fixes, ambiguous alias removals.",
   "fields": {
     "first_name": [
       "first_name",
       "firstname",
       "fname",
+      "fn",
       "given_name",
       "givenname",
       "first",
@@ -15,12 +16,18 @@
       "christian_name",
       "given-name",
       "your_first_name",
-      "your_firstname"
+      "your_firstname",
+      "contact_first_name",
+      "billing_first_name",
+      "shipping_first_name",
+      "name_first",
+      "applicant_first_name"
     ],
     "last_name": [
       "last_name",
       "lastname",
       "lname",
+      "ln",
       "family_name",
       "familyname",
       "surname",
@@ -31,7 +38,12 @@
       "family",
       "family-name",
       "your_last_name",
-      "your_lastname"
+      "your_lastname",
+      "contact_last_name",
+      "billing_last_name",
+      "shipping_last_name",
+      "name_last",
+      "applicant_last_name"
     ],
     "full_name": [
       "full_name",
@@ -58,7 +70,8 @@
       "middle_initial",
       "m_name",
       "mid_name",
-      "additional_name"
+      "additional_name",
+      "additional-name"
     ],
     "prefix": [
       "prefix",
@@ -67,7 +80,8 @@
       "honorific",
       "courtesy_title",
       "title_prefix",
-      "honorific_prefix"
+      "honorific_prefix",
+      "honorific-prefix"
     ],
     "suffix": [
       "suffix",
@@ -75,7 +89,8 @@
       "generation",
       "credentials",
       "post_nominal",
-      "honorific_suffix"
+      "honorific_suffix",
+      "honorific-suffix"
     ],
     "nickname": [
       "nickname",
@@ -84,14 +99,14 @@
       "preferred_name",
       "goes_by",
       "known_as",
-      "screen_name",
-      "handle"
+      "screen_name"
     ],
     "email": [
       "email",
       "email_address",
       "emailaddress",
       "e_mail",
+      "em",
       "mail",
       "primary_email",
       "work_email",
@@ -107,7 +122,18 @@
       "emailaddr",
       "custemail",
       "user_email",
-      "e_mail_address"
+      "e_mail_address",
+      "billing_email",
+      "subscriber_email",
+      "customer_email",
+      "login_email",
+      "signup_email",
+      "member_email",
+      "contact_email_address",
+      "email_input",
+      "email_addresses",
+      "emailaddresses",
+      "_replyto"
     ],
     "phone": [
       "phone",
@@ -115,6 +141,7 @@
       "phonenumber",
       "telephone",
       "tel",
+      "ph",
       "contact_number",
       "phone1",
       "phone2",
@@ -142,7 +169,15 @@
       "tel-local",
       "your_phone",
       "mobilephone",
-      "custtel"
+      "custtel",
+      "billing_phone",
+      "customer_phone",
+      "contact_phone",
+      "phone_no",
+      "phone_num",
+      "telnr",
+      "telefon",
+      "direct_phone_number"
     ],
     "home_phone": [
       "home_phone",
@@ -172,7 +207,9 @@
       "faxnumber",
       "fax_no",
       "telefax",
-      "business_fax"
+      "business_fax",
+      "your_fax",
+      "your-fax"
     ],
     "whatsapp": [
       "whatsapp",
@@ -185,6 +222,7 @@
       "company",
       "organization",
       "org",
+      "co",
       "company_name",
       "companyname",
       "employer",
@@ -201,14 +239,15 @@
       "agency",
       "institution",
       "establishment",
-      "empresa",
       "org_name",
       "company_org",
       "your_company",
       "your-company",
       "organization-name",
       "orgname",
-      "organization_name"
+      "organization_name",
+      "billing_company",
+      "customer_company"
     ],
     "job_title": [
       "title",
@@ -228,7 +267,9 @@
       "organization-title",
       "your_title",
       "your-title",
-      "organization_title"
+      "organization_title",
+      "headline",
+      "professional_headline"
     ],
     "department": [
       "department",
@@ -236,7 +277,6 @@
       "division",
       "team",
       "group",
-      "unit",
       "section",
       "business_unit",
       "area",
@@ -264,14 +304,17 @@
       "street_address",
       "address_line_1",
       "addr1",
+      "addr",
       "mailing_address",
       "street_address_1",
       "primary_address",
       "mailing_street",
       "street_line1",
-      "direccion",
       "street-address",
-      "address-line1"
+      "address-line1",
+      "billing_address_1",
+      "shipping_address_1",
+      "home_address"
     ],
     "address_line2": [
       "address2",
@@ -291,7 +334,14 @@
       "building",
       "room",
       "other_street",
-      "street_2"
+      "street_2",
+      "address-line2",
+      "address-line3",
+      "billing_address_2",
+      "shipping_address_2",
+      "unit_number",
+      "suite_number",
+      "apt_number"
     ],
     "city": [
       "city",
@@ -301,7 +351,12 @@
       "municipality",
       "mailing_city",
       "suburb",
-      "address-level2"
+      "address-level2",
+      "billing_city",
+      "shipping_city",
+      "city_town",
+      "your_city",
+      "your-city"
     ],
     "state": [
       "state",
@@ -316,7 +371,11 @@
       "state_name",
       "mailing_state",
       "state_region",
-      "address-level1"
+      "address-level1",
+      "billing_state",
+      "shipping_state",
+      "your_state",
+      "your-state"
     ],
     "postal_code": [
       "postal_code",
@@ -331,7 +390,11 @@
       "pincode",
       "mailing_zip",
       "mailing_postal_code",
-      "postal"
+      "postal",
+      "billing_postcode",
+      "shipping_postcode",
+      "your_zip",
+      "your-zip"
     ],
     "country": [
       "country",
@@ -341,7 +404,11 @@
       "country_name",
       "country_region",
       "mailing_country",
-      "country-name"
+      "country-name",
+      "billing_country",
+      "shipping_country",
+      "your_country",
+      "your-country"
     ],
     "full_address": [
       "full_address",
@@ -350,7 +417,9 @@
       "address_full",
       "formatted_address",
       "location",
-      "physical_address"
+      "physical_address",
+      "your_address",
+      "your-address"
     ],
     "website": [
       "website",
@@ -369,7 +438,10 @@
       "your_website",
       "company_website",
       "company_url",
-      "web_page"
+      "web_page",
+      "blog",
+      "blog_url",
+      "personal_website"
     ],
     "linkedin": [
       "linkedin",
@@ -377,7 +449,10 @@
       "linkedin_profile",
       "li_url",
       "linkedin_link",
-      "li_profile"
+      "li_profile",
+      "linkedin_handle",
+      "linked_in_url",
+      "linkedinurl"
     ],
     "twitter": [
       "twitter",
@@ -387,7 +462,9 @@
       "x_url",
       "twitter_username",
       "x_username",
-      "x_profile"
+      "x_profile",
+      "twitter_profile",
+      "twitter_link"
     ],
     "facebook": [
       "facebook",
@@ -396,7 +473,10 @@
       "fb_url",
       "facebook_profile",
       "facebook_link",
-      "fb_profile"
+      "fb_profile",
+      "fb_handle",
+      "fb_link",
+      "facebook_page"
     ],
     "instagram": [
       "instagram",
@@ -405,7 +485,10 @@
       "ig_handle",
       "insta",
       "instagram_profile",
-      "ig_profile"
+      "ig_profile",
+      "instagram_handle",
+      "instagram_username",
+      "insta_handle"
     ],
     "github": [
       "github",
@@ -429,14 +512,61 @@
       "tiktok_profile",
       "tt_handle"
     ],
+    "discord": [
+      "discord",
+      "discord_handle",
+      "discord_username",
+      "discord_id",
+      "discord_tag",
+      "discord_profile"
+    ],
+    "telegram": [
+      "telegram",
+      "tg",
+      "telegram_handle",
+      "telegram_username",
+      "telegram_id",
+      "tg_username",
+      "tg_handle"
+    ],
+    "gender": [
+      "gender",
+      "sex",
+      "gender_identity",
+      "your_gender"
+    ],
+    "timezone": [
+      "timezone",
+      "time_zone",
+      "tz",
+      "utc_offset"
+    ],
+    "language_preference": [
+      "language_preference",
+      "preferred_language",
+      "language",
+      "lang",
+      "locale",
+      "communication_language"
+    ],
+    "referrer_url": [
+      "referrer_url",
+      "http_referer",
+      "referer",
+      "referring_url",
+      "referral_url",
+      "page_referrer",
+      "page_url",
+      "form_url",
+      "landing_page_url"
+    ],
     "lead_status": [
       "lead_status",
       "hs_lead_status",
       "lead_stage",
       "prospect_status",
       "contact_status",
-      "lead_state",
-      "status"
+      "lead_state"
     ],
     "lifecycle_stage": [
       "lifecycle_stage",
@@ -458,14 +588,14 @@
       "email_consent",
       "gdpr_consent",
       "marketing_consent",
-      "optin",
-      "opt_in",
       "consent",
       "terms_accepted",
       "privacy_consent",
-      "subscribe_consent",
       "unsubscribed_from_emails",
-      "double_opt_in"
+      "data_processing_consent",
+      "sms_consent",
+      "phone_consent",
+      "communication_consent"
     ],
     "tags": [
       "tags",
@@ -477,7 +607,9 @@
       "groups",
       "segments",
       "lists",
-      "keywords"
+      "keywords",
+      "interest",
+      "interests"
     ],
     "source": [
       "source",
@@ -491,7 +623,9 @@
       "traffic_source",
       "referrer",
       "referral",
-      "how_heard"
+      "how_heard",
+      "attribution",
+      "signup_source"
     ],
     "utm_parameters": [
       "utm_parameters",
@@ -508,7 +642,10 @@
       "date_of_birth",
       "bday",
       "born_on",
-      "day_of_birth"
+      "day_of_birth",
+      "b_day",
+      "your_birthday",
+      "your-birthday"
     ],
     "age": [
       "age",
@@ -567,7 +704,9 @@
       "memo",
       "additional_info",
       "bio",
-      "about"
+      "about",
+      "internal_notes",
+      "observations"
     ],
     "message": [
       "message",
@@ -582,7 +721,11 @@
       "contact_message",
       "message_body",
       "comment_body",
-      "form_message"
+      "form_message",
+      "detail",
+      "details",
+      "request",
+      "additional_comments"
     ],
     "subject": [
       "subject",
@@ -590,11 +733,13 @@
       "email_subject",
       "topic",
       "regarding",
-      "re",
+      "subj",
       "your_subject",
       "contact_subject",
       "reason",
-      "reason_for_contact"
+      "reason_for_contact",
+      "inquiry_type",
+      "contact_reason"
     ],
     "company_size": [
       "company_size",
@@ -618,7 +763,8 @@
       "mrr",
       "annual_income",
       "deal_value",
-      "annualrevenue"
+      "annualrevenue",
+      "company_revenue"
     ],
     "currency": [
       "currency",
@@ -632,7 +778,8 @@
       "engagement_score",
       "rating",
       "priority",
-      "quality_score"
+      "quality_score",
+      "grade"
     ],
     "owner": [
       "owner",
@@ -682,9 +829,14 @@
       "subscription_status",
       "opted_in",
       "opt_in",
+      "optin",
       "email_subscribed",
       "newsletter",
-      "mailing_list"
+      "mailing_list",
+      "subscribe_consent",
+      "marketing_optin",
+      "newsletter_consent",
+      "double_opt_in"
     ],
     "verified": [
       "verified",
@@ -695,36 +847,5 @@
       "email_confirmed",
       "validated"
     ]
-  },
-  "i18n_config": {
-    "description": "Config for the i18n generator (scripts/generate_i18n.py). PatternRegistry ignores this key. Fields to translate are derived dynamically from the 'fields' section above.",
-    "languages": {
-      "es": "Spanish",
-      "fr": "French",
-      "de": "German",
-      "pt": "Portuguese",
-      "it": "Italian",
-      "nl": "Dutch",
-      "pl": "Polish",
-      "ro": "Romanian",
-      "tr": "Turkish",
-      "ru": "Russian",
-      "ja": "Japanese",
-      "zh-CN": "Chinese (Simplified)",
-      "ko": "Korean",
-      "ar": "Arabic",
-      "hi": "Hindi",
-      "sv": "Swedish",
-      "da": "Danish",
-      "nb": "Norwegian",
-      "fi": "Finnish",
-      "cs": "Czech"
-    },
-    "file_code_overrides": {
-      "zh-CN": "zh"
-    },
-    "translate_code_overrides": {
-      "nb": "no"
-    }
   }
 }

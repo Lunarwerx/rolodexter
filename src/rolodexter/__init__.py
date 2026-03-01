@@ -37,6 +37,7 @@ from ._phone import (
 )
 from .core import (
     AddressNormalizer,
+    BooleanNormalizer,
     CanonicalField,
     ContactMapper,
     EmailNormalizer,
@@ -47,23 +48,22 @@ from .core import (
     MappingResult,
     MatchStrategy,
     NameNormalizer,
-    NormalizationError,
     NormalizedMatchStrategy,
     PatternLoadError,
     PatternRegistry,
     PhoneNormalizer,
+    PostalCodeNormalizer,
     RolodexterError,
-    ServiceMatchStrategy,
-    ServiceNotFoundError,
-    StrategyError,
     StringNormalizer,
     normalize_value,
 )
+from .i18n import SUPPORTED_LANGUAGES, generate_language
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 __all__ = [
     "AddressNormalizer",
+    "BooleanNormalizer",
     "CanonicalField",
     # Core
     "ContactMapper",
@@ -77,12 +77,12 @@ __all__ = [
     # Strategies
     "MatchStrategy",
     "NameNormalizer",
-    "NormalizationError",
     "NormalizedMatchStrategy",
     "PatternLoadError",
     "PatternRegistry",
     # Normalizers
     "PhoneNormalizer",
+    "PostalCodeNormalizer",
     # Phone module
     "PhoneNumber",
     "PhoneNumberMatch",
@@ -91,16 +91,15 @@ __all__ = [
     "NumberType",
     # Exceptions
     "RolodexterError",
-    "ServiceMatchStrategy",
-    "ServiceNotFoundError",
-    "StrategyError",
     "StringNormalizer",
     "format_e164",
     "format_international",
     "format_national",
+    "generate_language",
     "is_number_match",
     "is_valid",
     "normalize_value",
     "number_type",
     "parse",
+    "SUPPORTED_LANGUAGES",
 ]

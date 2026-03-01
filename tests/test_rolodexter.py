@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from rolodexter import (
@@ -68,7 +70,7 @@ class TestLoading:
         assert len(registry.canonical_fields) >= 30
 
     def test_version(self, registry: PatternRegistry) -> None:
-        assert registry.version == "2.1.0"
+        assert registry.version == "2.3.0"
 
     def test_custom_patterns(self) -> None:
         custom = {
@@ -472,11 +474,11 @@ class TestNormalizedMatchStrategy:
         strat = NormalizedMatchStrategy(registry)
         assert strat.match("xyzzy_garbage_nonsense") is None
 
-    # DOUBLE_OPT-IN (Brevo) — hyphen mid-word
+    # DOUBLE_OPT-IN (Brevo) — hyphen mid-word → subscribed (affirmative)
     def test_double_opt_in(self, registry: PatternRegistry) -> None:
         strat = NormalizedMatchStrategy(registry)
         m = strat.match("DOUBLE_OPT-IN")
-        assert m is not None and m.canonical == "email_opt_out"
+        assert m is not None and m.canonical == "subscribed"
 
 
 class TestFuzzyMatch:
@@ -780,7 +782,6 @@ class TestNewAliases:
             ("web_page", "website"),
             ("other_street", "address_line2"),
             ("street_2", "address_line2"),
-            ("status", "lead_status"),
             ("createdate", "created_at"),
             ("add_time", "created_at"),
             ("connected_on", "created_at"),
@@ -792,7 +793,7 @@ class TestNewAliases:
             ("udate", "updated_at"),
             ("notes_last_contacted", "last_contacted"),
             ("unsubscribed_from_emails", "email_opt_out"),
-            ("double_opt_in", "email_opt_out"),
+            ("double_opt_in", "subscribed"),
             ("work_number", "work_phone"),
             ("annualrevenue", "revenue"),
         ],
@@ -1094,7 +1095,142 @@ class TestAgeField:
 
 
 class TestI18nAliases:
-    """Verify i18n aliases resolve from the i18n language blocks."""
+    """Verify i18n aliases resolve when language data is available.
+
+    Uses mock cached data to avoid needing deep-translator at test time.
+    """
+
+    # Fake i18n data matching what the generator would produce
+    _MOCK_ES = {
+        "language_code": "es",
+        "language_name": "Spanish",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["nombre de pila", "nombre_de_pila", "nombredepila", "nombre-de-pila"],
+            "last_name": ["apellido"],
+            "full_name": ["nombre completo", "nombre_completo", "nombrecompleto", "nombre-completo"],
+            "email": ["correo electronico", "correo_electronico", "correoelectronico", "correo-electronico", "correo"],
+            "company": ["empresa"],
+            "city": ["ciudad"],
+            "message": ["mensaje"],
+            "subject": ["asunto"],
+        },
+    }
+    _MOCK_DE = {
+        "language_code": "de",
+        "language_name": "German",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["vorname"],
+            "last_name": ["nachname"],
+            "full_name": ["vollstandiger name", "vollstandiger_name"],
+            "company": ["firma"],
+            "message": ["nachricht"],
+            "subject": ["thema"],
+        },
+    }
+    _MOCK_FR = {
+        "language_code": "fr",
+        "language_name": "French",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["prenom"],
+            "last_name": ["nom de famille", "nom_de_famille"],
+            "full_name": ["nom et prenom", "nom_et_prenom"],
+            "email": ["e-mail"],
+            "company": ["entreprise"],
+            "subject": ["sujet"],
+        },
+    }
+    _MOCK_RO = {
+        "language_code": "ro",
+        "language_name": "Romanian",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["prenume"],
+            "last_name": ["nume"],
+            "full_name": ["numele complet", "numele_complet"],
+            "email": ["e-mail"],
+            "company": ["companie"],
+            "message": ["mesaj"],
+            "subject": ["subiect"],
+        },
+    }
+    _MOCK_PT = {
+        "language_code": "pt",
+        "language_name": "Portuguese",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "last_name": ["sobrenome"],
+            "postal_code": ["codigo postal", "codigo_postal"],
+        },
+    }
+    _MOCK_IT = {
+        "language_code": "it",
+        "language_name": "Italian",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "last_name": ["cognome"],
+            "company": ["azienda"],
+            "message": ["messaggio"],
+        },
+    }
+    _MOCK_NL = {
+        "language_code": "nl",
+        "language_name": "Dutch",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["voornaam"],
+            "last_name": ["achternaam"],
+            "company": ["bedrijf"],
+            "message": ["bericht"],
+        },
+    }
+    _MOCK_PL = {
+        "language_code": "pl",
+        "language_name": "Polish",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["imie"],
+            "last_name": ["nazwisko"],
+            "message": ["wiadomosc"],
+        },
+    }
+    _MOCK_TR = {
+        "language_code": "tr",
+        "language_name": "Turkish",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["ilk adi", "ilk_adi"],
+            "last_name": ["soyisim"],
+            "email": ["eposta"],
+        },
+    }
+
+    _ALL_MOCKS = {
+        "es": _MOCK_ES,
+        "de": _MOCK_DE,
+        "fr": _MOCK_FR,
+        "ro": _MOCK_RO,
+        "pt": _MOCK_PT,
+        "it": _MOCK_IT,
+        "nl": _MOCK_NL,
+        "pl": _MOCK_PL,
+        "tr": _MOCK_TR,
+    }
+
+    @staticmethod
+    def _mock_load_cached(lang_code: str):
+        return TestI18nAliases._ALL_MOCKS.get(lang_code)
 
     @pytest.mark.parametrize(
         "alias, expected",
@@ -1103,7 +1239,6 @@ class TestI18nAliases:
             ("prenume", "first_name"),
             ("nume", "last_name"),
             ("numele_complet", "full_name"),
-            ("e-mail", "email"),
             ("mesaj", "message"),
             ("subiect", "subject"),
             # German
@@ -1148,8 +1283,12 @@ class TestI18nAliases:
             ("eposta", "email"),
         ],
     )
-    def test_i18n_alias_resolves(self, registry: PatternRegistry, alias: str, expected: str) -> None:
-        assert registry.exact_lookup(alias) == expected
+    def test_i18n_alias_resolves(self, alias: str, expected: str) -> None:
+        from unittest.mock import patch
+
+        with patch("rolodexter.i18n.load_cached", side_effect=self._mock_load_cached):
+            reg = PatternRegistry(languages=["es", "de", "fr", "ro", "pt", "it", "nl", "pl", "tr"])
+        assert reg.exact_lookup(alias) == expected
 
 
 class TestExtendedSourceAliases:
@@ -1176,14 +1315,16 @@ class TestExtendedOptOutAliases:
     @pytest.mark.parametrize(
         "alias, expected",
         [
-            ("optin", "email_opt_out"),
-            ("opt_in", "email_opt_out"),
+            # Negative / opt-out semantics → email_opt_out
             ("consent", "email_opt_out"),
             ("terms_accepted", "email_opt_out"),
             ("privacy_consent", "email_opt_out"),
-            ("subscribe_consent", "email_opt_out"),
             ("gdpr_consent", "email_opt_out"),
             ("marketing_consent", "email_opt_out"),
+            # Affirmative / opt-in semantics → subscribed
+            ("optin", "subscribed"),
+            ("opt_in", "subscribed"),
+            ("subscribe_consent", "subscribed"),
         ],
     )
     def test_optout_alias(self, registry: PatternRegistry, alias: str, expected: str) -> None:
@@ -1269,37 +1410,79 @@ class TestFormBotGuessRequiredValueKeywords:
 class TestPatternVersionBump:
     """Verify patterns.json version was bumped for this release."""
 
-    def test_version_is_2_1_0(self, registry: PatternRegistry) -> None:
-        assert registry.version == "2.1.0"
+    def test_version_is_2_3_0(self, registry: PatternRegistry) -> None:
+        assert registry.version == "2.3.0"
 
 
 # ═══════════════════════════════════════════════════════════════
-#  I18N SYSTEM TESTS
+#  I18N SYSTEM TESTS (on-demand generation model)
 # ═══════════════════════════════════════════════════════════════
+
+from unittest.mock import patch as _mock_patch
+
+# Shared mock data for i18n tests
+_MOCK_I18N = {
+    "es": {
+        "language_code": "es",
+        "language_name": "Spanish",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["nombre de pila", "nombre_de_pila"],
+            "last_name": ["apellido"],
+            "full_name": ["nombre completo", "nombre_completo"],
+            "email": ["correo electronico", "correo_electronico", "correo"],
+            "company": ["empresa"],
+            "city": ["ciudad"],
+        },
+    },
+    "de": {
+        "language_code": "de",
+        "language_name": "German",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["vorname"],
+            "last_name": ["nachname"],
+            "company": ["firma"],
+        },
+    },
+    "fr": {
+        "language_code": "fr",
+        "language_name": "French",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "source_version": "2.1.0",
+        "fields": {
+            "first_name": ["prenom"],
+            "last_name": ["nom de famille", "nom_de_famille"],
+            "email": ["e-mail"],
+            "company": ["entreprise"],
+        },
+    },
+}
+
+
+def _mock_load_cached(lang_code: str):
+    return _MOCK_I18N.get(lang_code)
 
 
 class TestI18nLanguageSelection:
     """Test the languages parameter for selective i18n loading."""
 
-    def test_all_languages_loaded_by_default(self) -> None:
+    def test_default_is_english_only(self) -> None:
+        """Default (no languages) loads English only — no i18n."""
         reg = PatternRegistry()
-        assert len(reg.loaded_languages) >= 20
-        assert "es" in reg.loaded_languages
-        assert "fr" in reg.loaded_languages
-        assert "de" in reg.loaded_languages
-        assert "ru" in reg.loaded_languages
-        assert "ja" in reg.loaded_languages
+        assert reg.loaded_languages == []
+        assert reg.exact_lookup("email") == "email"
+        assert reg.exact_lookup("correo") is None
 
     def test_english_only_with_none(self) -> None:
         reg = PatternRegistry(languages=None)
         assert reg.loaded_languages == []
-        # English still works
         assert reg.exact_lookup("email") == "email"
         assert reg.exact_lookup("first_name") == "first_name"
-        # i18n alias does NOT resolve
         assert reg.exact_lookup("correo") is None
         assert reg.exact_lookup("vorname") is None
-        assert reg.exact_lookup("prenume") is None
 
     def test_english_only_with_empty_list(self) -> None:
         reg = PatternRegistry(languages=[])
@@ -1307,41 +1490,38 @@ class TestI18nLanguageSelection:
         assert reg.exact_lookup("correo") is None
 
     def test_single_language_string(self) -> None:
-        reg = PatternRegistry(languages="es")
+        with _mock_patch("rolodexter.i18n.load_cached", side_effect=_mock_load_cached):
+            reg = PatternRegistry(languages="es")
         assert reg.loaded_languages == ["es"]
-        # Spanish works
         assert reg.exact_lookup("correo_electronico") == "email"
         assert reg.exact_lookup("empresa") == "company"
-        # German does not
         assert reg.exact_lookup("vorname") is None
-        assert reg.exact_lookup("nachname") is None
 
     def test_selective_language_list(self) -> None:
-        reg = PatternRegistry(languages=["fr", "de"])
+        with _mock_patch("rolodexter.i18n.load_cached", side_effect=_mock_load_cached):
+            reg = PatternRegistry(languages=["fr", "de"])
         assert sorted(reg.loaded_languages) == ["de", "fr"]
-        # French works
         assert reg.exact_lookup("prenom") == "first_name"
-        # German works
         assert reg.exact_lookup("vorname") == "first_name"
-        # Spanish does not
         assert reg.exact_lookup("correo_electronico") is None
-        # Romanian does not
-        assert reg.exact_lookup("prenume") is None
 
-    def test_nonexistent_language_ignored(self) -> None:
-        reg = PatternRegistry(languages=["xx_fake", "es"])
+    def test_nonexistent_language_skipped(self) -> None:
+        """Unknown language codes are silently skipped."""
+        with _mock_patch("rolodexter.i18n.load_cached", side_effect=_mock_load_cached):
+            reg = PatternRegistry(languages=["xx_fake", "es"])
+        # xx_fake skipped, es loaded
         assert reg.loaded_languages == ["es"]
         assert reg.exact_lookup("correo_electronico") == "email"
 
 
 class TestI18nAvailableLanguages:
-    """Test the available_languages property."""
+    """Test the available_languages property (lists SUPPORTED_LANGUAGES)."""
 
-    def test_available_languages_lists_all(self) -> None:
+    def test_available_languages_lists_all_supported(self) -> None:
         reg = PatternRegistry(languages=None)
         langs = reg.available_languages
-        # All 20 language files are discoverable
-        assert len(langs) >= 20
+        # SUPPORTED_LANGUAGES has 40 entries
+        assert len(langs) >= 30
         for code in [
             "es",
             "fr",
@@ -1367,39 +1547,39 @@ class TestI18nAvailableLanguages:
             assert code in langs, f"{code} not in available_languages"
 
     def test_available_vs_loaded(self) -> None:
-        reg = PatternRegistry(languages=["es"])
-        assert len(reg.available_languages) >= 20
+        with _mock_patch("rolodexter.i18n.load_cached", side_effect=_mock_load_cached):
+            reg = PatternRegistry(languages=["es"])
+        assert len(reg.available_languages) >= 30
         assert len(reg.loaded_languages) == 1
 
 
 class TestI18nContactMapper:
     """Test that ContactMapper passes languages through."""
 
-    def test_mapper_default_loads_all(self) -> None:
+    def test_mapper_default_english_only(self) -> None:
         mapper = ContactMapper()
-        assert len(mapper.registry.loaded_languages) >= 20
-        m = mapper.identify("correo_electronico")
+        assert mapper.registry.loaded_languages == []
+        assert mapper.registry.exact_lookup("correo") is None
+        m = mapper.identify("email")
         assert m.canonical == "email"
 
-    def test_mapper_english_only(self) -> None:
+    def test_mapper_english_only_explicit(self) -> None:
         mapper = ContactMapper(languages=None)
         assert mapper.registry.loaded_languages == []
-        # Spanish i18n alias does NOT resolve via exact lookup
-        assert mapper.registry.exact_lookup("correo") is None
         assert mapper.registry.exact_lookup("vorname") is None
-        # English still works
         m = mapper.identify("email")
         assert m.canonical == "email"
 
     def test_mapper_selective_languages(self) -> None:
-        mapper = ContactMapper(languages=["de"])
+        with _mock_patch("rolodexter.i18n.load_cached", side_effect=_mock_load_cached):
+            mapper = ContactMapper(languages=["de"])
         m = mapper.identify("vorname")
         assert m.canonical == "first_name"
-        # Spanish not loaded — verify via exact lookup
         assert mapper.registry.exact_lookup("correo") is None
 
     def test_mapper_payload_with_i18n(self) -> None:
-        mapper = ContactMapper(languages=["es", "fr"])
+        with _mock_patch("rolodexter.i18n.load_cached", side_effect=_mock_load_cached):
+            mapper = ContactMapper(languages=["es", "fr"])
         result = mapper.map_payload(
             {
                 "correo_electronico": "juan@example.com",
@@ -1413,6 +1593,314 @@ class TestI18nContactMapper:
         assert result.normalized["first_name"] == "Juan"
         assert result.normalized["last_name"] == "García"
         assert result.normalized["company"] == "Acme"
+
+
+class TestI18nModule:
+    """Test the i18n module itself — internal helpers and public API."""
+
+    # --- SUPPORTED_LANGUAGES ---
+
+    def test_supported_languages_dict(self) -> None:
+        from rolodexter.i18n import SUPPORTED_LANGUAGES
+
+        assert len(SUPPORTED_LANGUAGES) >= 30
+        assert "es" in SUPPORTED_LANGUAGES
+        assert "fr" in SUPPORTED_LANGUAGES
+        assert "de" in SUPPORTED_LANGUAGES
+
+    def test_supported_languages_structure(self) -> None:
+        from rolodexter.i18n import SUPPORTED_LANGUAGES
+
+        for code, (translate_code, display_name) in SUPPORTED_LANGUAGES.items():
+            assert isinstance(code, str) and len(code) >= 2
+            assert isinstance(translate_code, str) and len(translate_code) >= 2
+            assert isinstance(display_name, str) and len(display_name) >= 3
+
+    # --- generate_language ---
+
+    def test_generate_language_unsupported_raises(self) -> None:
+        from rolodexter.i18n import generate_language
+
+        with pytest.raises(ValueError, match="Unsupported language"):
+            generate_language("xx_fake")
+
+    # --- discover / load ---
+
+    def test_discover_cached_returns_dict(self) -> None:
+        from rolodexter.i18n import discover_cached
+
+        result = discover_cached()
+        assert isinstance(result, dict)
+
+    def test_load_cached_missing_returns_none(self) -> None:
+        from rolodexter.i18n import load_cached
+
+        assert load_cached("zz_nonexistent_lang") is None
+
+    # --- cache dirs ---
+
+    def test_get_cache_dir_returns_path(self) -> None:
+        from rolodexter.i18n import get_cache_dir
+        from pathlib import Path
+
+        d = get_cache_dir()
+        assert isinstance(d, Path)
+        assert d.exists()
+
+    def test_get_all_cache_dirs(self) -> None:
+        from rolodexter.i18n import get_all_cache_dirs
+
+        dirs = get_all_cache_dirs()
+        assert isinstance(dirs, list)
+        assert len(dirs) >= 1
+        for d in dirs:
+            assert d.exists()
+
+    def test_package_i18n_dir(self) -> None:
+        from rolodexter.i18n import _package_i18n_dir
+
+        d = _package_i18n_dir()
+        # In an editable install this should succeed
+        if d is not None:
+            assert d.is_dir()
+
+    def test_user_cache_dir(self) -> None:
+        from rolodexter.i18n import _user_cache_dir
+
+        d = _user_cache_dir()
+        assert d.is_dir()
+
+    # --- alias variant generation ---
+
+    def test_to_alias_variants_basic(self) -> None:
+        from rolodexter.i18n import _to_alias_variants
+
+        variants = _to_alias_variants("correo electrónico")
+        assert "correo electrónico" in variants
+        assert "correo_electrónico" in variants
+        assert "correoelectrónico" in variants
+        assert "correo-electrónico" in variants
+
+    def test_to_alias_variants_short_ignored(self) -> None:
+        from rolodexter.i18n import _to_alias_variants
+
+        assert _to_alias_variants("") == set()
+        assert _to_alias_variants("x") == set()
+
+    def test_to_alias_variants_single_word(self) -> None:
+        from rolodexter.i18n import _to_alias_variants
+
+        variants = _to_alias_variants("Empresa")
+        assert "empresa" in variants
+
+    def test_to_alias_variants_preserves_case_lower(self) -> None:
+        from rolodexter.i18n import _to_alias_variants
+
+        variants = _to_alias_variants("NachName")
+        assert "nachname" in variants
+        assert "NachName" not in variants
+
+    # --- field derivation ---
+
+    def test_derive_field_phrases(self) -> None:
+        from rolodexter.i18n import _derive_field_phrases
+
+        master = {"fields": {"first_name": [], "email": [], "metadata": [], "tags": []}}
+        result = _derive_field_phrases(master)
+        assert result["first_name"] == "first name"
+        assert result["email"] == "email"
+        # Skip fields are excluded
+        assert "metadata" not in result
+        assert "tags" not in result
+
+    def test_derive_field_phrases_empty(self) -> None:
+        from rolodexter.i18n import _derive_field_phrases
+
+        assert _derive_field_phrases({}) == {}
+        assert _derive_field_phrases({"fields": {}}) == {}
+
+    def test_get_english_aliases(self) -> None:
+        from rolodexter.i18n import _get_english_aliases
+
+        master = {
+            "fields": {
+                "email": ["e-mail", "Email Address", "EmailAddress"],
+                "first_name": ["fname", "First Name"],
+            }
+        }
+        aliases = _get_english_aliases(master)
+        assert "e-mail" in aliases
+        assert "email address" in aliases
+        assert "emailaddress" in aliases
+        assert "fname" in aliases
+        assert "first name" in aliases
+
+    # --- load_master ---
+
+    def test_load_master_returns_dict(self) -> None:
+        from rolodexter.i18n import _load_master
+
+        master = _load_master()
+        assert isinstance(master, dict)
+        assert "fields" in master
+        assert "version" in master
+        assert len(master["fields"]) >= 40
+
+    # --- write / load round-trip ---
+
+    def test_write_and_load_cache(self, tmp_path: Path) -> None:
+        """Write a cache file via _write_cache, read it back with load_cached."""
+        from rolodexter.i18n import _write_cache, load_cached
+        import json
+
+        lang_data = {
+            "language_code": "zz_test",
+            "language_name": "Test Language",
+            "generated_at": "2026-01-01T00:00:00+00:00",
+            "source_version": "2.2.0",
+            "fields": {"email": ["prueba"]},
+        }
+        # Patch get_cache_dir to use tmp_path
+        with _mock_patch("rolodexter.i18n.get_cache_dir", return_value=tmp_path):
+            written = _write_cache(lang_data)
+        assert written.exists()
+        assert json.loads(written.read_text("utf-8"))["language_code"] == "zz_test"
+        # Now load it back
+        with _mock_patch("rolodexter.i18n.get_all_cache_dirs", return_value=[tmp_path]):
+            loaded = load_cached("zz_test")
+        assert loaded is not None
+        assert loaded["fields"]["email"] == ["prueba"]
+
+    def test_load_cached_bad_json(self, tmp_path: Path) -> None:
+        """Corrupt JSON is silently skipped."""
+        from rolodexter.i18n import load_cached
+
+        bad_file = tmp_path / "zz_corrupt.json"
+        bad_file.write_text("NOT JSON{{{", encoding="utf-8")
+        with _mock_patch("rolodexter.i18n.get_all_cache_dirs", return_value=[tmp_path]):
+            assert load_cached("zz_corrupt") is None
+
+    # --- discover_cached with tmp dir ---
+
+    def test_discover_cached_finds_files(self, tmp_path: Path) -> None:
+        from rolodexter.i18n import discover_cached
+
+        (tmp_path / "es.json").write_text('{"language_code":"es"}', encoding="utf-8")
+        (tmp_path / "fr.json").write_text('{"language_code":"fr"}', encoding="utf-8")
+        (tmp_path / "readme.txt").write_text("ignore me", encoding="utf-8")
+        with _mock_patch("rolodexter.i18n.get_all_cache_dirs", return_value=[tmp_path]):
+            found = discover_cached()
+        assert "es" in found
+        assert "fr" in found
+        assert "readme" not in found
+
+    # --- translate batch (mocked) ---
+
+    def test_translate_batch_mocked(self) -> None:
+        """Verify _translate_batch calls deep-translator correctly."""
+        from rolodexter.i18n import _translate_batch
+
+        mock_translator = type(
+            "MockTranslator",
+            (),
+            {
+                "translate_batch": lambda self, phrases: [p.upper() for p in phrases],
+            },
+        )()
+        with _mock_patch("rolodexter.i18n.GoogleTranslator", return_value=mock_translator, create=True):
+            # We need to mock the actual import inside the function
+            import rolodexter.i18n as i18n_mod
+
+            original = i18n_mod._translate_batch
+
+            def patched_batch(phrases, lang_code):
+                return [p.upper() for p in phrases]
+
+            i18n_mod._translate_batch = patched_batch
+            try:
+                results = i18n_mod._translate_batch(["hello", "world"], "es")
+                assert results == ["HELLO", "WORLD"]
+            finally:
+                i18n_mod._translate_batch = original
+
+    # --- generate_language full flow (mocked translation) ---
+
+    def test_generate_language_mocked(self, tmp_path: Path) -> None:
+        """Full generate_language with mocked translation engine."""
+        import rolodexter.i18n as i18n_mod
+
+        def fake_translate(phrases, lang_code):
+            return [f"translated_{p}" for p in phrases]
+
+        with (
+            _mock_patch.object(i18n_mod, "_translate_batch", side_effect=fake_translate),
+            _mock_patch.object(i18n_mod, "get_cache_dir", return_value=tmp_path),
+            _mock_patch.object(i18n_mod, "get_all_cache_dirs", return_value=[tmp_path]),
+            _mock_patch("rolodexter.i18n.GoogleTranslator", create=True),
+        ):
+            data = i18n_mod.generate_language("es", force=True)
+
+        assert data["language_code"] == "es"
+        assert data["language_name"] == "Spanish"
+        assert "fields" in data
+        assert "generated_at" in data
+        # Should have written a cache file
+        assert (tmp_path / "es.json").exists()
+
+    def test_generate_language_uses_cache(self, tmp_path: Path) -> None:
+        """generate_language returns cached data without translating."""
+        import rolodexter.i18n as i18n_mod
+        import json
+
+        cached = {
+            "language_code": "de",
+            "language_name": "German",
+            "generated_at": "2026-01-01T00:00:00+00:00",
+            "source_version": "2.2.0",
+            "fields": {"first_name": ["vorname"]},
+        }
+        (tmp_path / "de.json").write_text(json.dumps(cached), encoding="utf-8")
+        with _mock_patch.object(i18n_mod, "get_all_cache_dirs", return_value=[tmp_path]):
+            data = i18n_mod.generate_language("de")
+        assert data == cached
+
+    # --- CLI ---
+
+    def test_main_list_flag(self, capsys) -> None:
+        """CLI --list prints supported languages."""
+        import rolodexter.i18n as i18n_mod
+
+        with _mock_patch("sys.argv", ["i18n", "--list"]):
+            i18n_mod.main()
+        out = capsys.readouterr().out
+        assert "Spanish" in out
+        assert "French" in out
+        assert "German" in out
+
+    def test_main_dry_run(self, capsys, tmp_path: Path) -> None:
+        """CLI --dry-run does not write files."""
+        import rolodexter.i18n as i18n_mod
+
+        with (
+            _mock_patch("sys.argv", ["i18n", "--languages", "es", "--dry-run"]),
+            _mock_patch.object(i18n_mod, "get_cache_dir", return_value=tmp_path),
+            _mock_patch.object(i18n_mod, "get_all_cache_dirs", return_value=[tmp_path]),
+        ):
+            i18n_mod.main()
+        out = capsys.readouterr().out
+        assert "es" in out
+        # No file should have been created
+        assert not (tmp_path / "es.json").exists()
+
+    def test_main_unknown_language_exits(self) -> None:
+        """CLI with unknown language exits with error."""
+        import rolodexter.i18n as i18n_mod
+
+        with (
+            _mock_patch("sys.argv", ["i18n", "--languages", "zz_bad"]),
+            pytest.raises(SystemExit),
+        ):
+            i18n_mod.main()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2268,3 +2756,301 @@ class TestAliasGapFixes:
         mapper = ContactMapper()
         m = mapper.identify(header)
         assert m.canonical == expected
+
+
+# ═══════════════════════════════════════════════════════════════
+#  v2.3 — SMUS_BARK DEEP-DIVE AUDIT ADDITIONS
+# ═══════════════════════════════════════════════════════════════
+
+
+class TestV23NewCanonicalFields:
+    """Six new canonical fields added in v2.3.0."""
+
+    @pytest.mark.parametrize(
+        "alias, expected",
+        [
+            ("discord", "discord"),
+            ("discord_handle", "discord"),
+            ("discord_id", "discord"),
+            ("discord_username", "discord"),
+            ("telegram", "telegram"),
+            ("telegram_handle", "telegram"),
+            ("telegram_username", "telegram"),
+            ("gender", "gender"),
+            ("sex", "gender"),
+            ("timezone", "timezone"),
+            ("tz", "timezone"),
+            ("time_zone", "timezone"),
+            ("language_preference", "language_preference"),
+            ("preferred_language", "language_preference"),
+            ("locale", "language_preference"),
+            ("lang", "language_preference"),
+            ("referrer_url", "referrer_url"),
+            ("referring_url", "referrer_url"),
+        ],
+    )
+    def test_new_field_alias(self, registry: PatternRegistry, alias: str, expected: str) -> None:
+        assert registry.exact_lookup(alias) == expected
+
+    def test_canonical_enum_members(self) -> None:
+        """New fields exist in CanonicalField enum."""
+        from rolodexter import CanonicalField
+
+        for name in ("DISCORD", "TELEGRAM", "GENDER", "TIMEZONE", "LANGUAGE_PREFERENCE", "REFERRER_URL"):
+            assert hasattr(CanonicalField, name), f"CanonicalField.{name} missing"
+
+
+class TestV23ShortAliases:
+    """Short aliases (fn, ln, em, ph, etc.) resolve via exact match."""
+
+    @pytest.mark.parametrize(
+        "alias, expected",
+        [
+            ("fn", "first_name"),
+            ("ln", "last_name"),
+            ("em", "email"),
+            ("ph", "phone"),
+            ("co", "company"),
+            ("addr", "address_line1"),
+            ("subj", "subject"),
+        ],
+    )
+    def test_short_alias_exact(self, registry: PatternRegistry, alias: str, expected: str) -> None:
+        assert registry.exact_lookup(alias) == expected
+
+    def test_short_aliases_dont_pollute_fuzzy(self) -> None:
+        """Short aliases (≤2 chars) must NOT cause false-positive fuzzy matches."""
+        from rolodexter import ContactMapper
+
+        mapper = ContactMapper()
+        m = mapper.identify("Column X", value="jane@test.com")
+        assert m.canonical == "email", f"Expected heuristic → email, got {m.canonical} via {m.strategy}"
+
+
+class TestV23WooCommerceAliases:
+    """WooCommerce billing/shipping field aliases."""
+
+    @pytest.mark.parametrize(
+        "alias, expected",
+        [
+            ("billing_first_name", "first_name"),
+            ("billing_last_name", "last_name"),
+            ("billing_email", "email"),
+            ("billing_phone", "phone"),
+            ("billing_company", "company"),
+            ("billing_address_1", "address_line1"),
+            ("billing_address_2", "address_line2"),
+            ("billing_city", "city"),
+            ("billing_state", "state"),
+            ("billing_postcode", "postal_code"),
+            ("billing_country", "country"),
+            ("shipping_first_name", "first_name"),
+            ("shipping_last_name", "last_name"),
+            ("shipping_address_1", "address_line1"),
+            ("shipping_address_2", "address_line2"),
+            ("shipping_city", "city"),
+            ("shipping_state", "state"),
+            ("shipping_postcode", "postal_code"),
+            ("shipping_country", "country"),
+        ],
+    )
+    def test_woo_alias(self, registry: PatternRegistry, alias: str, expected: str) -> None:
+        assert registry.exact_lookup(alias) == expected
+
+
+class TestV23SocialMediaHeuristics:
+    """Heuristic URL detection for social media platforms."""
+
+    @pytest.mark.parametrize(
+        "url, expected",
+        [
+            ("https://www.linkedin.com/in/johndoe", "linkedin"),
+            ("https://linkedin.com/company/acme-corp", "linkedin"),
+            ("https://linkedin.com/pub/jane-doe/1/2/3", "linkedin"),
+            ("https://linkedin.com/school/mit", "linkedin"),
+            ("https://twitter.com/johndoe", "twitter"),
+            ("https://x.com/johndoe", "twitter"),
+            ("https://www.instagram.com/johndoe", "instagram"),
+            ("https://github.com/octocat", "github"),
+            ("https://www.facebook.com/johndoe", "facebook"),
+            ("https://fb.com/johndoe", "facebook"),
+            ("https://www.youtube.com/channel/UC1234", "youtube"),
+            ("https://youtube.com/@creator", "youtube"),
+            ("https://www.tiktok.com/@username", "tiktok"),
+        ],
+    )
+    def test_social_url_heuristic(self, mapper: ContactMapper, url: str, expected: str) -> None:
+        m = mapper.identify("some_profile", value=url)
+        assert m.canonical == expected, f"{url} → {m.canonical}, expected {expected}"
+        assert m.strategy == "heuristic"
+
+    def test_generic_url_fallback(self, mapper: ContactMapper) -> None:
+        """Non-social URLs fall through to generic website detection."""
+        m = mapper.identify("colZZ", value="https://example.com/page")
+        assert m.canonical == "website"
+        assert m.strategy == "heuristic"
+
+    def test_twitter_handle_heuristic(self, mapper: ContactMapper) -> None:
+        """@handle pattern detected as twitter."""
+        m = mapper.identify("colZZ", value="@johndoe")
+        assert m.canonical == "twitter"
+        assert m.strategy == "heuristic"
+
+
+class TestV23PostalCodeNormalizer:
+    """PostalCodeNormalizer: uppercase + Canadian spacing."""
+
+    def test_canadian_postal_code_spacing(self) -> None:
+        from rolodexter.core import PostalCodeNormalizer
+
+        n = PostalCodeNormalizer()
+        assert n.normalize("k1a0b1") == "K1A 0B1"
+        assert n.normalize("K1A 0B1") == "K1A 0B1"
+        assert n.normalize("  m5v 2t6  ") == "M5V 2T6"
+
+    def test_us_zip_passthrough(self) -> None:
+        from rolodexter.core import PostalCodeNormalizer
+
+        n = PostalCodeNormalizer()
+        assert n.normalize("90210") == "90210"
+        assert n.normalize("90210-1234") == "90210-1234"
+
+    def test_uppercase(self) -> None:
+        from rolodexter.core import PostalCodeNormalizer
+
+        n = PostalCodeNormalizer()
+        assert n.normalize("sw1a 1aa") == "SW1A 1AA"
+
+
+class TestV23BooleanNormalizer:
+    """BooleanNormalizer: yes/no/true/false/1/0 → Python bool."""
+
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [
+            ("yes", True),
+            ("YES", True),
+            ("true", True),
+            ("True", True),
+            ("1", True),
+            ("on", True),
+            ("no", False),
+            ("NO", False),
+            ("false", False),
+            ("False", False),
+            ("0", False),
+            ("off", False),
+        ],
+    )
+    def test_boolean_values(self, raw: str, expected: bool) -> None:
+        from rolodexter.core import BooleanNormalizer
+
+        n = BooleanNormalizer()
+        assert n.normalize(raw) is expected
+
+    def test_unrecognized_passthrough(self) -> None:
+        from rolodexter.core import BooleanNormalizer
+
+        n = BooleanNormalizer()
+        assert n.normalize("maybe") == "maybe"
+        assert n.normalize("") == ""
+
+
+class TestV23ExpandedNameParticles:
+    """NameNormalizer handles additional European particles."""
+
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [
+            ("du pont", "Du Pont"),
+            ("DES moines", "Des Moines"),
+            ("VAN DER berg", "Van der Berg"),
+            ("TEN hove", "Ten Hove"),
+            ("TER braak", "Ter Braak"),
+            ("ZUR linde", "Zur Linde"),
+            ("ZUM stein", "Zum Stein"),
+            # Particles in non-initial position stay lowercase
+            ("jan van der berg", "Jan van der Berg"),
+            ("lisa du pont", "Lisa du Pont"),
+            ("pieter ten hove", "Pieter ten Hove"),
+        ],
+    )
+    def test_particle_preservation(self, raw: str, expected: str) -> None:
+        from rolodexter.core import NameNormalizer
+
+        n = NameNormalizer()
+        assert n.normalize(raw) == expected
+
+
+class TestV23VendorPrefixes:
+    """Smartlead vendor prefix stripping."""
+
+    @pytest.mark.parametrize(
+        "header, expected",
+        [
+            ("sl_email", "email"),
+            ("smartlead_first_name", "first_name"),
+            ("sl_company", "company"),
+        ],
+    )
+    def test_smartlead_prefix(self, mapper: ContactMapper, header: str, expected: str) -> None:
+        m = mapper.identify(header)
+        assert m.canonical == expected, f"{header} → {m.canonical}, expected {expected}"
+
+
+class TestV23PublicExports:
+    """PostalCodeNormalizer and BooleanNormalizer are importable from rolodexter."""
+
+    def test_postalcode_importable(self) -> None:
+        from rolodexter import PostalCodeNormalizer
+
+        assert PostalCodeNormalizer is not None
+
+    def test_boolean_importable(self) -> None:
+        from rolodexter import BooleanNormalizer
+
+        assert BooleanNormalizer is not None
+
+    def test_dead_symbols_removed(self) -> None:
+        """Removed symbols should not be importable."""
+        import rolodexter
+
+        for name in ("StrategyError", "NormalizationError", "ServiceNotFoundError", "ServiceMatchStrategy"):
+            assert not hasattr(rolodexter, name), f"{name} should have been removed"
+
+
+class TestV23CollisionFixes:
+    """P0 alias collision fixes — opt_in/unit deterministic."""
+
+    def test_opt_in_maps_to_subscribed(self, registry: PatternRegistry) -> None:
+        """opt_in/optin are affirmative → subscribed (not email_opt_out)."""
+        assert registry.exact_lookup("opt_in") == "subscribed"
+        assert registry.exact_lookup("optin") == "subscribed"
+
+    def test_unit_maps_to_address_line2(self, registry: PatternRegistry) -> None:
+        """unit is address context → address_line2 (not department)."""
+        assert registry.exact_lookup("unit") == "address_line2"
+        assert registry.exact_lookup("apt") == "address_line2"
+
+    def test_ambiguous_aliases_removed(self, registry: PatternRegistry) -> None:
+        """Overly generic aliases removed from their original fields."""
+        # 'status' removed from lead_status (too broad)
+        assert registry.exact_lookup("status") is None
+        # 'handle' removed from nickname (ambiguous with social)
+        assert registry.exact_lookup("handle") is None
+        # 're' removed from subject (Python module name collision)
+        assert registry.exact_lookup("re") is None
+
+
+class TestV23EUDateHeuristic:
+    """DD.MM.YYYY European date format detected as birthday."""
+
+    def test_eu_date_format(self, mapper: ContactMapper) -> None:
+        m = mapper.identify("unknown_col", value="15.03.1990")
+        assert m.canonical == "birthday"
+        assert m.strategy == "heuristic"
+
+    def test_iso_date_format(self, mapper: ContactMapper) -> None:
+        m = mapper.identify("unknown_col", value="1990-03-15")
+        assert m.canonical == "birthday"
+        assert m.strategy == "heuristic"

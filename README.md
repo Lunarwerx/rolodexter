@@ -61,6 +61,9 @@ pip install rolodexter
 # With fuzzy matching for typo recovery
 pip install rolodexter[fuzzy]
 
+# With on-demand i18n translation (40 languages)
+pip install rolodexter[i18n]
+
 # Everything
 pip install rolodexter[all]
 
@@ -109,6 +112,30 @@ Built-in mappings for:
 | —           | Beehiiv            | —               | —        |
 | —           | Resend             | —               | —        |
 | —           | Intercom           | —               | —        |
+
+### 🌍 On-Demand i18n (40 Languages)
+
+English ships by default. Request any of 40 supported languages and aliases are generated on the fly via Google Translate, then cached so translation only happens once:
+
+```python
+from rolodexter import ContactMapper
+
+# Load Spanish aliases on demand
+mapper = ContactMapper(languages=["es"])
+result = mapper.map_payload({"correo_electronico": "juan@example.com"})
+print(result.normalized["email"])  # juan@example.com
+```
+
+```bash
+# CLI: generate and cache all 40 languages
+python -m rolodexter.i18n
+
+# Or specific languages
+python -m rolodexter.i18n --languages es,fr,de
+
+# List supported languages
+python -m rolodexter.i18n --list
+```
 
 ### 🔄 Cross-Service Translation
 
@@ -159,6 +186,7 @@ ContactMapper(
     default_service=None,    # Default service profile
     normalize=True,          # Apply value normalization
     strategies=None,         # Override strategy pipeline
+    languages=None,          # i18n: None=English only, "es", ["es","fr"], "all"
 )
 ```
 
@@ -206,15 +234,12 @@ mapper = ContactMapper(patterns=custom)
 ```
 rolodexter/
 ├── __init__.py          # Public API
-├── mapper.py            # ContactMapper orchestrator
-├── registry.py          # PatternRegistry (O(1) indexes)
-├── strategies.py        # 4 pluggable matching strategies
-├── normalizers.py       # Value normalizers
-├── models.py            # FieldMatch, MappingResult
-├── constants.py         # CanonicalField enum, thresholds
-├── exceptions.py        # Exception hierarchy
+├── core.py              # ContactMapper, PatternRegistry, strategies, normalizers
+├── _phone.py            # Built-in E.164 phone parser (zero deps)
+├── i18n.py              # On-demand i18n generator (40 languages, cached)
 └── _data/
-    └── patterns.json    # Master truth table (300+ aliases, 20+ services)
+    ├── patterns.json    # Master truth table (550+ aliases, 20+ services)
+    └── i18n/            # Cached language files (generated on demand)
 ```
 
 ## Contributing

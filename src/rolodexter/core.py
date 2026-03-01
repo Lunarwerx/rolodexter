@@ -28,23 +28,6 @@ class PatternLoadError(RolodexterError):
     """Raised when pattern data cannot be loaded or parsed."""
 
 
-class StrategyError(RolodexterError):
-    """Raised when a matching strategy encounters an unrecoverable error."""
-
-
-class NormalizationError(RolodexterError):
-    """Raised when value normalization fails."""
-
-
-class ServiceNotFoundError(RolodexterError):
-    """Raised when a requested service profile does not exist in the registry.
-
-    .. deprecated:: 2.0.0
-        Service profiles have been removed.  This exception is kept only
-        for backward compatibility and is never raised by the library.
-    """
-
-
 # ═══════════════════════════════════════════════════════════════════════
 #  CANONICAL FIELDS & THRESHOLDS
 # ═══════════════════════════════════════════════════════════════════════
@@ -95,6 +78,8 @@ class CanonicalField(str, Enum):
     GITHUB = "github"
     YOUTUBE = "youtube"
     TIKTOK = "tiktok"
+    DISCORD = "discord"
+    TELEGRAM = "telegram"
     # CRM / Marketing
     LEAD_STATUS = "lead_status"
     LIFECYCLE_STAGE = "lifecycle_stage"
@@ -120,6 +105,11 @@ class CanonicalField(str, Enum):
     # Meta
     NOTES = "notes"
     METADATA = "metadata"
+    # Demographics
+    GENDER = "gender"
+    TIMEZONE = "timezone"
+    LANGUAGE_PREFERENCE = "language_preference"
+    REFERRER_URL = "referrer_url"
     # Provenance / Integration
     SOURCE_ID = "source_id"
     SOURCE_SERVICE = "source_service"
@@ -264,6 +254,8 @@ class NameNormalizer:
             "de",
             "del",
             "der",
+            "du",
+            "des",
             "van",
             "von",
             "la",
@@ -274,6 +266,12 @@ class NameNormalizer:
             "das",
             "el",
             "al",
+            "af",
+            "op",
+            "ten",
+            "ter",
+            "zur",
+            "zum",
             "bin",
             "ibn",
             "mac",
@@ -314,6 +312,40 @@ class StringNormalizer:
         return value.strip()
 
 
+class PostalCodeNormalizer:
+    """Uppercase and format postal codes."""
+
+    _CA_RE = re.compile(r"^([A-Z]\d[A-Z])(\d[A-Z]\d)$")
+
+    @classmethod
+    def normalize(cls, value: str) -> str:
+        if not value or not isinstance(value, str):
+            return value  # type: ignore[return-value]
+        cleaned = value.strip().upper()
+        m = cls._CA_RE.match(cleaned)
+        if m:
+            return f"{m.group(1)} {m.group(2)}"
+        return cleaned
+
+
+class BooleanNormalizer:
+    """Normalize boolean-like strings to Python bools."""
+
+    _TRUE = frozenset({"true", "yes", "1", "on", "y", "opted_in", "subscribed", "opt_in"})
+    _FALSE = frozenset({"false", "no", "0", "off", "n", "opted_out", "unsubscribed", "opt_out"})
+
+    @classmethod
+    def normalize(cls, value: str) -> bool | str:
+        if not isinstance(value, str):
+            return value  # type: ignore[return-value]
+        lower = value.strip().lower()
+        if lower in cls._TRUE:
+            return True
+        if lower in cls._FALSE:
+            return False
+        return value.strip()
+
+
 _FIELD_NORMALIZERS: dict[str, type] = {
     "phone": PhoneNormalizer,
     "home_phone": PhoneNormalizer,
@@ -326,15 +358,31 @@ _FIELD_NORMALIZERS: dict[str, type] = {
     "full_name": NameNormalizer,
     "middle_name": NameNormalizer,
     "nickname": NameNormalizer,
+    "prefix": NameNormalizer,
+    "suffix": NameNormalizer,
     "address_line1": AddressNormalizer,
     "address_line2": AddressNormalizer,
     "city": AddressNormalizer,
     "full_address": AddressNormalizer,
+    "postal_code": PostalCodeNormalizer,
     "state": StringNormalizer,
     "country": StringNormalizer,
     "message": StringNormalizer,
     "subject": StringNormalizer,
     "company_size": StringNormalizer,
+    "email_opt_out": BooleanNormalizer,
+    "subscribed": BooleanNormalizer,
+    "verified": BooleanNormalizer,
+    "website": StringNormalizer,
+    "linkedin": StringNormalizer,
+    "twitter": StringNormalizer,
+    "facebook": StringNormalizer,
+    "instagram": StringNormalizer,
+    "github": StringNormalizer,
+    "youtube": StringNormalizer,
+    "tiktok": StringNormalizer,
+    "discord": StringNormalizer,
+    "telegram": StringNormalizer,
 }
 
 
@@ -355,18 +403,21 @@ class PatternRegistry:
     """Immutable index over the master ``patterns.json`` truth table.
 
     The optional *languages* parameter controls which i18n language
-    files (from ``_data/i18n/``) are merged into the alias index:
+    aliases are merged into the alias index:
 
-    * ``"all"`` (default) — every available language file is loaded.
-    * ``None`` or ``[]`` — **no** i18n aliases are loaded (English only).
-    * ``["es", "fr"]`` — only the listed language codes are loaded.
+    * ``None`` or ``[]`` (default) — **English only**, no i18n.
+    * ``"all"`` — every supported language (generates on first use).
+    * ``["es", "fr"]`` — only the listed language codes are loaded
+      (generated on first use if not already cached).
+
+    Generated i18n files are cached so translation only happens once.
+    Requires ``deep-translator`` to be installed for generation.
     """
 
     __slots__ = (
         "_all_aliases",
         "_canonical_fields",
         "_data",
-        "_i18n_files",
         "_languages",
         "_loaded_languages",
         "_reverse_index",
@@ -376,7 +427,7 @@ class PatternRegistry:
         self,
         patterns: dict[str, Any] | None = None,
         patterns_path: str | None = None,
-        languages: str | Sequence[str] | None = "all",
+        languages: str | Sequence[str] | None = None,
     ) -> None:
         if patterns is not None:
             self._data = patterns
@@ -390,7 +441,6 @@ class PatternRegistry:
         self._all_aliases: list[str] = []
         self._canonical_fields: list[str] = []
         self._loaded_languages: list[str] = []
-        self._i18n_files: dict[str, Any] = self._discover_i18n_files()
         self._build_indexes()
 
     @staticmethod
@@ -410,30 +460,6 @@ class PatternRegistry:
         except Exception as exc:
             raise PatternLoadError(f"Failed to load bundled patterns: {exc}") from exc
 
-    @staticmethod
-    def _discover_i18n_files() -> dict[str, Any]:
-        """Discover available ``i18n/*.json`` language files."""
-        files: dict[str, Any] = {}
-        try:
-            pkg = resources.files("rolodexter._data")
-            i18n_dir = pkg / "i18n"
-            for item in i18n_dir.iterdir():
-                if hasattr(item, "name") and item.name.endswith(".json"):
-                    lang_code = item.name[:-5]  # strip .json
-                    files[lang_code] = item
-        except Exception:
-            pass
-        return files
-
-    @staticmethod
-    def _load_i18n_file(resource: Any) -> dict[str, Any] | None:
-        """Load a single i18n language file."""
-        try:
-            text = resource.read_text(encoding="utf-8")
-            return json.loads(text)
-        except Exception:
-            return None
-
     def _build_indexes(self) -> None:
         fields: dict[str, list[str]] = self._data.get("fields", {})
         for canonical, aliases in fields.items():
@@ -444,21 +470,35 @@ class PatternRegistry:
                     self._reverse_index[key] = canonical
                 self._all_aliases.append(key)
 
-        # ── i18n layer (file-based) ─────────────────────────────────
+        # ── expansion rules (programmatic alias generation) ─────────
+        self._apply_expansion_rules()
+
+        # ── i18n layer (on-demand) ──────────────────────────────────
+        from .i18n import SUPPORTED_LANGUAGES, discover_cached, load_cached
+
         if self._languages == "all":
-            lang_codes = list(self._i18n_files.keys())
+            lang_codes = sorted(SUPPORTED_LANGUAGES.keys())
         elif self._languages:
             lang_codes = list(self._languages) if not isinstance(self._languages, str) else [self._languages]
         else:
             lang_codes = []
 
         for lang in lang_codes:
-            resource = self._i18n_files.get(lang)
-            if resource is None:
-                continue
-            lang_data = self._load_i18n_file(resource)
+            # Try loading from cache first (no translation needed)
+            lang_data = load_cached(lang)
+            if lang_data is None:
+                # Try to generate on the fly
+                try:
+                    from .i18n import generate_language
+
+                    lang_data = generate_language(lang)
+                except (ImportError, ValueError):
+                    # deep-translator not installed or unsupported lang
+                    continue
+
             if lang_data is None:
                 continue
+
             self._loaded_languages.append(lang)
             for canonical, aliases in lang_data.get("fields", {}).items():
                 for alias in aliases:
@@ -466,6 +506,37 @@ class PatternRegistry:
                     if key not in self._reverse_index:
                         self._reverse_index[key] = canonical
                     self._all_aliases.append(key)
+
+    def _apply_expansion_rules(self) -> None:
+        """Expand compact ``expansion`` rules in patterns.json into aliases.
+
+        This eliminates hundreds of hand-written prefix/suffix permutations
+        (``billing_email``, ``shipping_city``, ``twitter_url``, …) by
+        generating them from concise rule tables at load time.
+        """
+        expansion = self._data.get("expansion")
+        if not expansion:
+            return
+
+        def _register(alias: str, canonical: str) -> None:
+            key = alias.lower().strip()
+            if key not in self._reverse_index:
+                self._reverse_index[key] = canonical
+                self._all_aliases.append(key)
+
+        # ── form prefixes (billing_, shipping_, your_, …) ──────────
+        form_prefixes: list[str] = expansion.get("form_prefixes", [])
+        form_fields: dict[str, str] = expansion.get("form_fields", {})
+        for prefix in form_prefixes:
+            for suffix, canonical in form_fields.items():
+                _register(f"{prefix}{suffix}", canonical)
+
+        # ── social suffixes (_url, _handle, _profile, …) ───────────
+        social_suffixes: list[str] = expansion.get("social_suffixes", [])
+        social_fields: list[str] = expansion.get("social_fields", [])
+        for platform in social_fields:
+            for suffix in social_suffixes:
+                _register(f"{platform}{suffix}", platform)
 
     def exact_lookup(self, header: str) -> str | None:
         return self._reverse_index.get(header.lower().strip())
@@ -485,8 +556,17 @@ class PatternRegistry:
 
     @property
     def available_languages(self) -> list[str]:
-        """All language codes with i18n files available (loaded or not)."""
-        return sorted(self._i18n_files.keys())
+        """All supported language codes (whether cached or not)."""
+        from .i18n import SUPPORTED_LANGUAGES
+
+        return sorted(SUPPORTED_LANGUAGES.keys())
+
+    @property
+    def cached_languages(self) -> list[str]:
+        """Language codes that have cached i18n files ready to use."""
+        from .i18n import discover_cached
+
+        return sorted(discover_cached().keys())
 
     @property
     def version(self) -> str:
@@ -585,7 +665,7 @@ class NormalizedMatchStrategy(MatchStrategy):
     )
 
     # Vendor-specific prefixes to strip
-    _VENDOR_PREFIXES = ("hs_", "hubspot_", "sf_", "salesforce_")
+    _VENDOR_PREFIXES = ("hs_", "hubspot_", "sf_", "salesforce_", "sl_", "smartlead_")
 
     # Address-context prefixes (the suffix IS the field)
     _ADDRESS_PREFIXES = (
@@ -739,7 +819,14 @@ class FuzzyMatchStrategy(MatchStrategy):
         if not aliases:
             return None
 
-        result = process.extractOne(clean, aliases, scorer=fuzz.WRatio, score_cutoff=FUZZY_MATCH_THRESHOLD)
+        # Exclude very short aliases (≤2 chars) — they cause false positives
+        # with WRatio partial matching (e.g. "co" matching "column").
+        # Short aliases still work via exact/normalized strategies.
+        filtered = [a for a in aliases if len(a) > 2]
+        if not filtered:
+            return None
+
+        result = process.extractOne(clean, filtered, scorer=fuzz.WRatio, score_cutoff=FUZZY_MATCH_THRESHOLD)
         if result is None:
             return None
 
@@ -756,18 +843,37 @@ class HeuristicMatchStrategy(MatchStrategy):
     """Regex data-shape detection for unrecognisable headers."""
 
     _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+        # Email
         ("email", re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")),
+        # Phone
         ("phone", re.compile(r"^\+?1?\s*[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$")),
         ("phone", re.compile(r"^\+?[1-9]\d{6,14}$")),
-        ("linkedin", re.compile(r"^https?://(www\.)?linkedin\.com/in/", re.IGNORECASE)),
+        # Social media URLs (must come BEFORE generic website)
+        ("linkedin", re.compile(r"^https?://(www\.)?linkedin\.com/(in|company|pub|school)/", re.IGNORECASE)),
+        ("twitter", re.compile(r"^https?://(www\.)?(twitter\.com|x\.com)/[a-zA-Z0-9_]+/?$", re.IGNORECASE)),
+        ("instagram", re.compile(r"^https?://(www\.)?instagram\.com/[a-zA-Z0-9_.]+/?$", re.IGNORECASE)),
+        ("github", re.compile(r"^https?://(www\.)?github\.com/[a-zA-Z0-9\-]+/?$", re.IGNORECASE)),
+        ("facebook", re.compile(r"^https?://(www\.)?(facebook\.com|fb\.com)/[a-zA-Z0-9.]+/?$", re.IGNORECASE)),
+        (
+            "youtube",
+            re.compile(
+                r"^https?://(www\.)?youtube\.com/((channel|c)/[a-zA-Z0-9\-_]+|@[a-zA-Z0-9\-_]+)/?$", re.IGNORECASE
+            ),
+        ),
+        ("tiktok", re.compile(r"^https?://(www\.)?tiktok\.com/@[a-zA-Z0-9_.]+/?$", re.IGNORECASE)),
+        # Generic URLs
         ("website", re.compile(r"^https?://[^\s]+$", re.IGNORECASE)),
         ("website", re.compile(r"^www\.[^\s]+\.[a-zA-Z]{2,}$", re.IGNORECASE)),
+        # Social handle (ambiguous — low confidence inherent in heuristic)
         ("twitter", re.compile(r"^@[a-zA-Z0-9_]{1,15}$")),
+        # Postal codes
         ("postal_code", re.compile(r"^\d{5}(-\d{4})?$")),
         ("postal_code", re.compile(r"^[A-Z]\d[A-Z]\s?\d[A-Z]\d$", re.IGNORECASE)),
         ("postal_code", re.compile(r"^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$", re.IGNORECASE)),
+        # Dates
         ("birthday", re.compile(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$")),
         ("birthday", re.compile(r"^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$")),
+        ("birthday", re.compile(r"^\d{1,2}\.\d{1,2}\.\d{2,4}$")),
     )
 
     @property
@@ -819,7 +925,7 @@ class ContactMapper:
         default_service: str | None = None,
         normalize: bool = True,
         strategies: Sequence[MatchStrategy] | None = None,
-        languages: str | Sequence[str] | None = "all",
+        languages: str | Sequence[str] | None = None,
     ) -> None:
         self._registry = PatternRegistry(patterns=patterns, patterns_path=patterns_path, languages=languages)
         self._normalize = normalize
