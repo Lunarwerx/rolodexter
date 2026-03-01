@@ -3054,3 +3054,62 @@ class TestV23EUDateHeuristic:
         m = mapper.identify("unknown_col", value="1990-03-15")
         assert m.canonical == "birthday"
         assert m.strategy == "heuristic"
+
+
+# ═══════════════════════════════════════════════════════════════
+#  v2.3 — EXPANSION RULES ENGINE
+# ═══════════════════════════════════════════════════════════════
+
+
+class TestExpansionEngine:
+    """Verify programmatic alias expansion from patterns.json rules."""
+
+    def test_form_prefix_generates_aliases(self, registry: PatternRegistry) -> None:
+        """Every form_prefix × form_field combo should resolve."""
+        # These are NOT in the seed aliases — purely expansion-generated
+        for prefix in ("billing_", "shipping_", "your_", "your-", "contact_", "customer_", "applicant_"):
+            for suffix, expected in (("email", "email"), ("phone", "phone"), ("city", "city")):
+                alias = f"{prefix}{suffix}"
+                result = registry.exact_lookup(alias)
+                assert result == expected, f"{alias} → {result}, expected {expected}"
+
+    def test_social_suffix_generates_aliases(self, registry: PatternRegistry) -> None:
+        """Every social_field × social_suffix combo should resolve."""
+        for platform in ("twitter", "instagram", "facebook", "github", "discord", "telegram"):
+            for suffix in ("_url", "_handle", "_profile", "_username", "_link", "_id"):
+                alias = f"{platform}{suffix}"
+                result = registry.exact_lookup(alias)
+                assert result == platform, f"{alias} → {result}, expected {platform}"
+
+    def test_expansion_doesnt_override_seeds(self) -> None:
+        """Seed aliases take priority over expansion-generated ones."""
+        # 'contact_number' is a seed for 'phone' — expansion would also map it
+        reg = PatternRegistry()
+        assert reg.exact_lookup("contact_number") == "phone"
+
+    def test_expansion_covers_new_prefixes(self, registry: PatternRegistry) -> None:
+        """Expansion generates aliases that weren't in the old hand-written list."""
+        # These never existed before — pure bonus from expansion rules
+        bonus = [
+            ("applicant_email", "email"),
+            ("applicant_phone", "phone"),
+            ("shipping_email", "email"),
+            ("shipping_phone", "phone"),
+            ("customer_address_1", "address_line1"),
+            ("name_birthday", "birthday"),
+        ]
+        for alias, expected in bonus:
+            result = registry.exact_lookup(alias)
+            assert result == expected, f"Bonus: {alias} → {result}, expected {expected}"
+
+    def test_no_expansion_when_absent(self) -> None:
+        """Custom patterns dict without expansion section still works."""
+        custom = {"fields": {"first_name": ["fname", "given"]}}
+        reg = PatternRegistry(patterns=custom)
+        assert reg.exact_lookup("fname") == "first_name"
+        # No expansion-generated aliases
+        assert reg.exact_lookup("billing_first_name") is None
+
+    def test_total_aliases_grew(self, registry: PatternRegistry) -> None:
+        """Expansion should increase total alias count beyond seed count."""
+        assert len(registry.all_aliases) > 700  # seeds are ~615, expansion adds ~340

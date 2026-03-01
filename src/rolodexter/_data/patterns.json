@@ -1,6 +1,74 @@
 {
   "version": "2.3.0",
-  "description": "Rolodexter master field pattern registry — the universal contact data truth table.  v2.0 removes per-service profiles in favour of smart normalisation. v2.1 adds source_id, source_service, subscribed, verified fields; phonenumbers E.164 support; nested payload depth. v2.2 adds on-demand i18n, built-in phone module. v2.3 smus_bark audit: 7 new canonical fields, 130+ new aliases, alias collision fixes, ambiguous alias removals.",
+  "expansion": {
+    "form_prefixes": [
+      "billing_",
+      "shipping_",
+      "your_",
+      "your-",
+      "contact_",
+      "customer_",
+      "applicant_",
+      "name_"
+    ],
+    "form_fields": {
+      "first_name": "first_name",
+      "firstname": "first_name",
+      "last_name": "last_name",
+      "lastname": "last_name",
+      "email": "email",
+      "email_address": "email",
+      "phone": "phone",
+      "number": "phone",
+      "company": "company",
+      "name": "full_name",
+      "address": "full_address",
+      "address_1": "address_line1",
+      "address_2": "address_line2",
+      "city": "city",
+      "state": "state",
+      "postcode": "postal_code",
+      "zip": "postal_code",
+      "country": "country",
+      "fax": "fax",
+      "message": "message",
+      "subject": "subject",
+      "reason": "subject",
+      "title": "job_title",
+      "birthday": "birthday",
+      "age": "age",
+      "gender": "gender",
+      "website": "website",
+      "owner": "owner",
+      "score": "score",
+      "status": "lead_status",
+      "id": "source_id",
+      "prefix": "prefix",
+      "suffix": "suffix",
+      "first": "first_name",
+      "last": "last_name"
+    },
+    "social_suffixes": [
+      "_url",
+      "_handle",
+      "_profile",
+      "_username",
+      "_link",
+      "_id"
+    ],
+    "social_fields": [
+      "twitter",
+      "instagram",
+      "facebook",
+      "github",
+      "linkedin",
+      "tiktok",
+      "youtube",
+      "discord",
+      "telegram",
+      "whatsapp"
+    ]
+  },
   "fields": {
     "first_name": [
       "first_name",
@@ -14,14 +82,7 @@
       "f_name",
       "first_nm",
       "christian_name",
-      "given-name",
-      "your_first_name",
-      "your_firstname",
-      "contact_first_name",
-      "billing_first_name",
-      "shipping_first_name",
-      "name_first",
-      "applicant_first_name"
+      "given-name"
     ],
     "last_name": [
       "last_name",
@@ -36,30 +97,19 @@
       "l_name",
       "last_nm",
       "family",
-      "family-name",
-      "your_last_name",
-      "your_lastname",
-      "contact_last_name",
-      "billing_last_name",
-      "shipping_last_name",
-      "name_last",
-      "applicant_last_name"
+      "family-name"
     ],
     "full_name": [
       "full_name",
       "fullname",
       "display_name",
       "displayname",
-      "contact_name",
       "contact",
       "person_name",
-      "customer_name",
       "subscriber_name",
       "member_name",
       "client_name",
       "name",
-      "your_name",
-      "your-name",
       "custname"
     ],
     "middle_name": [
@@ -75,7 +125,6 @@
     ],
     "prefix": [
       "prefix",
-      "name_prefix",
       "salutation",
       "honorific",
       "courtesy_title",
@@ -85,7 +134,6 @@
     ],
     "suffix": [
       "suffix",
-      "name_suffix",
       "generation",
       "credentials",
       "post_nominal",
@@ -111,25 +159,19 @@
       "primary_email",
       "work_email",
       "personal_email",
-      "contact_email",
       "email1",
       "email2",
       "email_id",
       "electronic_mail",
       "email_primary",
-      "your_email",
-      "your-email",
       "emailaddr",
       "custemail",
       "user_email",
       "e_mail_address",
-      "billing_email",
       "subscriber_email",
-      "customer_email",
       "login_email",
       "signup_email",
       "member_email",
-      "contact_email_address",
       "email_input",
       "email_addresses",
       "emailaddresses",
@@ -142,7 +184,6 @@
       "telephone",
       "tel",
       "ph",
-      "contact_number",
       "phone1",
       "phone2",
       "primary_phone",
@@ -167,12 +208,8 @@
       "tel_number",
       "tel-national",
       "tel-local",
-      "your_phone",
       "mobilephone",
       "custtel",
-      "billing_phone",
-      "customer_phone",
-      "contact_phone",
       "phone_no",
       "phone_num",
       "telnr",
@@ -207,9 +244,7 @@
       "faxnumber",
       "fax_no",
       "telefax",
-      "business_fax",
-      "your_fax",
-      "your-fax"
+      "business_fax"
     ],
     "whatsapp": [
       "whatsapp",
@@ -241,13 +276,9 @@
       "establishment",
       "org_name",
       "company_org",
-      "your_company",
-      "your-company",
       "organization-name",
       "orgname",
-      "organization_name",
-      "billing_company",
-      "customer_company"
+      "organization_name"
     ],
     "job_title": [
       "title",
@@ -265,8 +296,6 @@
       "function",
       "job_function",
       "organization-title",
-      "your_title",
-      "your-title",
       "organization_title",
       "headline",
       "professional_headline"
@@ -312,8 +341,6 @@
       "street_line1",
       "street-address",
       "address-line1",
-      "billing_address_1",
-      "shipping_address_1",
       "home_address"
     ],
     "address_line2": [
@@ -337,8 +364,6 @@
       "street_2",
       "address-line2",
       "address-line3",
-      "billing_address_2",
-      "shipping_address_2",
       "unit_number",
       "suite_number",
       "apt_number"
@@ -352,11 +377,7 @@
       "mailing_city",
       "suburb",
       "address-level2",
-      "billing_city",
-      "shipping_city",
-      "city_town",
-      "your_city",
-      "your-city"
+      "city_town"
     ],
     "state": [
       "state",
@@ -371,11 +392,7 @@
       "state_name",
       "mailing_state",
       "state_region",
-      "address-level1",
-      "billing_state",
-      "shipping_state",
-      "your_state",
-      "your-state"
+      "address-level1"
     ],
     "postal_code": [
       "postal_code",
@@ -390,11 +407,7 @@
       "pincode",
       "mailing_zip",
       "mailing_postal_code",
-      "postal",
-      "billing_postcode",
-      "shipping_postcode",
-      "your_zip",
-      "your-zip"
+      "postal"
     ],
     "country": [
       "country",
@@ -404,11 +417,7 @@
       "country_name",
       "country_region",
       "mailing_country",
-      "country-name",
-      "billing_country",
-      "shipping_country",
-      "your_country",
-      "your-country"
+      "country-name"
     ],
     "full_address": [
       "full_address",
@@ -417,9 +426,7 @@
       "address_full",
       "formatted_address",
       "location",
-      "physical_address",
-      "your_address",
-      "your-address"
+      "physical_address"
     ],
     "website": [
       "website",
@@ -435,7 +442,6 @@
       "webpage",
       "home_page",
       "link",
-      "your_website",
       "company_website",
       "company_url",
       "web_page",
@@ -445,34 +451,22 @@
     ],
     "linkedin": [
       "linkedin",
-      "linkedin_url",
-      "linkedin_profile",
       "li_url",
-      "linkedin_link",
       "li_profile",
-      "linkedin_handle",
       "linked_in_url",
       "linkedinurl"
     ],
     "twitter": [
       "twitter",
-      "twitter_handle",
-      "twitter_url",
       "x_handle",
       "x_url",
-      "twitter_username",
       "x_username",
-      "x_profile",
-      "twitter_profile",
-      "twitter_link"
+      "x_profile"
     ],
     "facebook": [
       "facebook",
       "fb",
-      "facebook_url",
       "fb_url",
-      "facebook_profile",
-      "facebook_link",
       "fb_profile",
       "fb_handle",
       "fb_link",
@@ -481,59 +475,40 @@
     "instagram": [
       "instagram",
       "ig",
-      "instagram_url",
       "ig_handle",
       "insta",
-      "instagram_profile",
       "ig_profile",
-      "instagram_handle",
-      "instagram_username",
       "insta_handle"
     ],
     "github": [
       "github",
-      "github_url",
       "gh_url",
-      "github_profile",
-      "github_username",
       "gh_profile"
     ],
     "youtube": [
       "youtube",
       "yt",
-      "youtube_url",
       "youtube_channel",
       "yt_channel"
     ],
     "tiktok": [
       "tiktok",
-      "tiktok_url",
-      "tiktok_handle",
-      "tiktok_profile",
       "tt_handle"
     ],
     "discord": [
       "discord",
-      "discord_handle",
-      "discord_username",
-      "discord_id",
-      "discord_tag",
-      "discord_profile"
+      "discord_tag"
     ],
     "telegram": [
       "telegram",
       "tg",
-      "telegram_handle",
-      "telegram_username",
-      "telegram_id",
       "tg_username",
       "tg_handle"
     ],
     "gender": [
       "gender",
       "sex",
-      "gender_identity",
-      "your_gender"
+      "gender_identity"
     ],
     "timezone": [
       "timezone",
@@ -565,7 +540,6 @@
       "hs_lead_status",
       "lead_stage",
       "prospect_status",
-      "contact_status",
       "lead_state"
     ],
     "lifecycle_stage": [
@@ -643,14 +617,11 @@
       "bday",
       "born_on",
       "day_of_birth",
-      "b_day",
-      "your_birthday",
-      "your-birthday"
+      "b_day"
     ],
     "age": [
       "age",
-      "years_old",
-      "your_age"
+      "years_old"
     ],
     "created_at": [
       "created_at",
@@ -716,9 +687,6 @@
       "enquiry",
       "question",
       "feedback",
-      "your_message",
-      "your-message",
-      "contact_message",
       "message_body",
       "comment_body",
       "form_message",
@@ -734,12 +702,9 @@
       "topic",
       "regarding",
       "subj",
-      "your_subject",
-      "contact_subject",
       "reason",
       "reason_for_contact",
-      "inquiry_type",
-      "contact_reason"
+      "inquiry_type"
     ],
     "company_size": [
       "company_size",
@@ -774,7 +739,6 @@
     "score": [
       "score",
       "lead_score",
-      "contact_score",
       "engagement_score",
       "rating",
       "priority",
@@ -783,7 +747,6 @@
     ],
     "owner": [
       "owner",
-      "contact_owner",
       "assigned_to",
       "rep",
       "sales_rep",
@@ -810,7 +773,6 @@
       "remote_id",
       "foreign_id",
       "system_id",
-      "customer_id",
       "stripe_id",
       "crm_id"
     ],
