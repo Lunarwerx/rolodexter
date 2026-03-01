@@ -1,0 +1,183 @@
+{
+  "language_code": "cs",
+  "language_name": "Czech",
+  "generated_at": "2026-03-01T10:15:28.781608+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "krestni jmeno",
+      "krestni_jmeno",
+      "krestnijmeno",
+      "křestní jméno",
+      "křestní-jméno",
+      "křestní_jméno",
+      "křestníjméno"
+    ],
+    "last_name": [
+      "prijmeni",
+      "příjmení"
+    ],
+    "full_name": [
+      "cele jmeno",
+      "cele_jmeno",
+      "celejmeno",
+      "celé jméno",
+      "celé-jméno",
+      "celé_jméno",
+      "celéjméno"
+    ],
+    "middle_name": [
+      "druhe jmeno",
+      "druhe_jmeno",
+      "druhejmeno",
+      "druhé jméno",
+      "druhé-jméno",
+      "druhé_jméno",
+      "druhéjméno"
+    ],
+    "prefix": [
+      "predpona",
+      "předpona"
+    ],
+    "suffix": [
+      "pripona",
+      "přípona"
+    ],
+    "nickname": [
+      "prezdivka",
+      "přezdívka"
+    ],
+    "email": [
+      "e-mail"
+    ],
+    "phone": [
+      "telefon"
+    ],
+    "home_phone": [
+      "domaci telefon",
+      "domaci_telefon",
+      "domacitelefon",
+      "domácí telefon",
+      "domácí-telefon",
+      "domácí_telefon",
+      "domácítelefon"
+    ],
+    "work_phone": [
+      "pracovni telefon",
+      "pracovni_telefon",
+      "pracovnitelefon",
+      "pracovní telefon",
+      "pracovní-telefon",
+      "pracovní_telefon",
+      "pracovnítelefon"
+    ],
+    "company": [
+      "spolecnost",
+      "společnost"
+    ],
+    "job_title": [
+      "pracovni nazev",
+      "pracovni_nazev",
+      "pracovninazev",
+      "pracovní název",
+      "pracovní-název",
+      "pracovní_název",
+      "pracovnínázev"
+    ],
+    "department": [
+      "oddeleni",
+      "oddělení"
+    ],
+    "industry": [
+      "prumysl",
+      "průmysl"
+    ],
+    "address_line1": [
+      "radek adresy1",
+      "radek_adresy1",
+      "radekadresy1",
+      "řádek adresy1",
+      "řádek-adresy1",
+      "řádek_adresy1",
+      "řádekadresy1"
+    ],
+    "address_line2": [
+      "radek adresy 2",
+      "radek_adresy_2",
+      "radekadresy2",
+      "řádek adresy 2",
+      "řádek-adresy-2",
+      "řádek_adresy_2",
+      "řádekadresy2"
+    ],
+    "city": [
+      "mesto",
+      "město"
+    ],
+    "state": [
+      "stat",
+      "stát"
+    ],
+    "postal_code": [
+      "psc",
+      "psč"
+    ],
+    "country": [
+      "zeme",
+      "země"
+    ],
+    "full_address": [
+      "uplna adresa",
+      "uplna_adresa",
+      "uplnaadresa",
+      "úplná adresa",
+      "úplná-adresa",
+      "úplná_adresa",
+      "úplnáadresa"
+    ],
+    "website": [
+      "webove stranky",
+      "webove_stranky",
+      "webovestranky",
+      "webové stránky",
+      "webové-stránky",
+      "webové_stránky",
+      "webovéstránky"
+    ],
+    "twitter": [
+      "cvrlikani",
+      "cvrlikání"
+    ],
+    "birthday": [
+      "narozeniny"
+    ],
+    "age": [
+      "stari",
+      "stáří"
+    ],
+    "notes": [
+      "poznamky",
+      "poznámky"
+    ],
+    "message": [
+      "zprava",
+      "zpráva"
+    ],
+    "subject": [
+      "podrobit"
+    ],
+    "company_size": [
+      "velikost spolecnosti",
+      "velikost společnosti",
+      "velikost-společnosti",
+      "velikost_spolecnosti",
+      "velikost_společnosti",
+      "velikostspolecnosti",
+      "velikostspolečnosti"
+    ],
+    "revenue": [
+      "prijmy",
+      "příjmy"
+    ]
+  }
+}

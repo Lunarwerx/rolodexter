@@ -61,7 +61,7 @@ Changelog = "https://github.com/rolodexter/rolodexter/blob/main/CHANGELOG.md"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"rolodexter._data" = ["*.json"]
+"rolodexter._data" = ["*.json", "i18n/*.json"]
 
 # ── Pytest ────────────────────────────────────────────────────────────
 

@@ -318,14 +318,32 @@ def normalize_value(canonical_field: str, value: Any) -> Any:
 
 
 class PatternRegistry:
-    """Immutable index over the master ``patterns.json`` truth table."""
+    """Immutable index over the master ``patterns.json`` truth table.
 
-    __slots__ = ("_all_aliases", "_canonical_fields", "_data", "_reverse_index", "_service_indexes")
+    The optional *languages* parameter controls which i18n language
+    files (from ``_data/i18n/``) are merged into the alias index:
+
+    * ``"all"`` (default) — every available language file is loaded.
+    * ``None`` or ``[]`` — **no** i18n aliases are loaded (English only).
+    * ``["es", "fr"]`` — only the listed language codes are loaded.
+    """
+
+    __slots__ = (
+        "_all_aliases",
+        "_canonical_fields",
+        "_data",
+        "_i18n_files",
+        "_languages",
+        "_loaded_languages",
+        "_reverse_index",
+        "_service_indexes",
+    )
 
     def __init__(
         self,
         patterns: dict[str, Any] | None = None,
         patterns_path: str | None = None,
+        languages: str | Sequence[str] | None = "all",
     ) -> None:
         if patterns is not None:
             self._data = patterns
@@ -334,10 +352,13 @@ class PatternRegistry:
         else:
             self._data = self._load_default()
 
+        self._languages = languages
         self._reverse_index: dict[str, str] = {}
         self._service_indexes: dict[str, dict[str, str]] = {}
         self._all_aliases: list[str] = []
         self._canonical_fields: list[str] = []
+        self._loaded_languages: list[str] = []
+        self._i18n_files: dict[str, Any] = self._discover_i18n_files()
         self._build_indexes()
 
     @staticmethod
@@ -357,6 +378,30 @@ class PatternRegistry:
         except Exception as exc:
             raise PatternLoadError(f"Failed to load bundled patterns: {exc}") from exc
 
+    @staticmethod
+    def _discover_i18n_files() -> dict[str, Any]:
+        """Discover available ``i18n/*.json`` language files."""
+        files: dict[str, Any] = {}
+        try:
+            pkg = resources.files("rolodexter._data")
+            i18n_dir = pkg / "i18n"
+            for item in i18n_dir.iterdir():
+                if hasattr(item, 'name') and item.name.endswith(".json"):
+                    lang_code = item.name[:-5]  # strip .json
+                    files[lang_code] = item
+        except Exception:
+            pass
+        return files
+
+    @staticmethod
+    def _load_i18n_file(resource: Any) -> dict[str, Any] | None:
+        """Load a single i18n language file."""
+        try:
+            text = resource.read_text(encoding="utf-8")
+            return json.loads(text)
+        except Exception:
+            return None
+
     def _build_indexes(self) -> None:
         fields: dict[str, list[str]] = self._data.get("fields", {})
         for canonical, aliases in fields.items():
@@ -366,6 +411,29 @@ class PatternRegistry:
                 if key not in self._reverse_index:
                     self._reverse_index[key] = canonical
                 self._all_aliases.append(key)
+
+        # ── i18n layer (file-based) ─────────────────────────────────
+        if self._languages == "all":
+            lang_codes = list(self._i18n_files.keys())
+        elif self._languages:
+            lang_codes = list(self._languages) if not isinstance(self._languages, str) else [self._languages]
+        else:
+            lang_codes = []
+
+        for lang in lang_codes:
+            resource = self._i18n_files.get(lang)
+            if resource is None:
+                continue
+            lang_data = self._load_i18n_file(resource)
+            if lang_data is None:
+                continue
+            self._loaded_languages.append(lang)
+            for canonical, aliases in lang_data.get("fields", {}).items():
+                for alias in aliases:
+                    key = alias.lower().strip()
+                    if key not in self._reverse_index:
+                        self._reverse_index[key] = canonical
+                    self._all_aliases.append(key)
 
         services: dict[str, dict[str, str]] = self._data.get("services", {})
         for svc_name, mapping in services.items():
@@ -395,6 +463,16 @@ class PatternRegistry:
     def available_services(self) -> list[str]:
         return list(self._service_indexes)
 
+    @property
+    def loaded_languages(self) -> list[str]:
+        """Language codes whose i18n aliases were loaded."""
+        return list(self._loaded_languages)
+
+    @property
+    def available_languages(self) -> list[str]:
+        """All language codes with i18n files available (loaded or not)."""
+        return sorted(self._i18n_files.keys())
+
     def get_service_mapping(self, service: str) -> dict[str, str]:
         key = service.lower()
         if key not in self._service_indexes:
@@ -416,6 +494,7 @@ class PatternRegistry:
         return (
             f"PatternRegistry(aliases={len(self._reverse_index)}, "
             f"services={len(self._service_indexes)}, "
+            f"languages={self._loaded_languages}, "
             f"version={self.version!r})"
         )
 
@@ -585,8 +664,11 @@ class ContactMapper:
         default_service: str | None = None,
         normalize: bool = True,
         strategies: Sequence[MatchStrategy] | None = None,
+        languages: str | Sequence[str] | None = "all",
     ) -> None:
-        self._registry = PatternRegistry(patterns=patterns, patterns_path=patterns_path)
+        self._registry = PatternRegistry(
+            patterns=patterns, patterns_path=patterns_path, languages=languages
+        )
         self._normalize = normalize
         self._default_service = default_service
 

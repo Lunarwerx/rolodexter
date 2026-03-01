@@ -1,0 +1,124 @@
+{
+  "language_code": "sv",
+  "language_name": "Swedish",
+  "generated_at": "2026-03-01T10:15:09.551960+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "fornamn",
+      "förnamn"
+    ],
+    "last_name": [
+      "efternamn"
+    ],
+    "full_name": [
+      "fullstandiga namn",
+      "fullstandiga_namn",
+      "fullstandiganamn",
+      "fullständiga namn",
+      "fullständiga-namn",
+      "fullständiga_namn",
+      "fullständiganamn"
+    ],
+    "middle_name": [
+      "mellannamn"
+    ],
+    "suffix": [
+      "andelse",
+      "ändelse"
+    ],
+    "nickname": [
+      "smeknamn"
+    ],
+    "email": [
+      "e-post",
+      "epost"
+    ],
+    "phone": [
+      "telefon"
+    ],
+    "home_phone": [
+      "hemtelefon"
+    ],
+    "work_phone": [
+      "jobbtelefon"
+    ],
+    "company": [
+      "foretag",
+      "företag"
+    ],
+    "job_title": [
+      "jobbtitel"
+    ],
+    "department": [
+      "avdelning"
+    ],
+    "industry": [
+      "industri"
+    ],
+    "address_line1": [
+      "adressrad 1",
+      "adressrad-1",
+      "adressrad1",
+      "adressrad_1"
+    ],
+    "address_line2": [
+      "adressrad 2",
+      "adressrad-2",
+      "adressrad2",
+      "adressrad_2"
+    ],
+    "city": [
+      "stad"
+    ],
+    "state": [
+      "ange"
+    ],
+    "postal_code": [
+      "postnummer"
+    ],
+    "country": [
+      "land"
+    ],
+    "full_address": [
+      "fullstandig adress",
+      "fullstandig_adress",
+      "fullstandigadress",
+      "fullständig adress",
+      "fullständig-adress",
+      "fullständig_adress",
+      "fullständigadress"
+    ],
+    "website": [
+      "webbplats"
+    ],
+    "twitter": [
+      "kvittra"
+    ],
+    "birthday": [
+      "fodelsedag",
+      "födelsedag"
+    ],
+    "age": [
+      "aldras",
+      "åldras"
+    ],
+    "notes": [
+      "anteckningar"
+    ],
+    "message": [
+      "meddelande"
+    ],
+    "subject": [
+      "amne",
+      "ämne"
+    ],
+    "company_size": [
+      "foretagsstorlek",
+      "företagsstorlek"
+    ],
+    "revenue": [
+      "inkomst"
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "language_code": "da",
+  "language_name": "Danish",
+  "generated_at": "2026-03-01T10:15:28.549313+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "fornavn"
+    ],
+    "last_name": [
+      "efternavn"
+    ],
+    "full_name": [
+      "fulde navn",
+      "fulde-navn",
+      "fulde_navn",
+      "fuldenavn"
+    ],
+    "middle_name": [
+      "mellemnavn"
+    ],
+    "prefix": [
+      "praefiks",
+      "præfiks"
+    ],
+    "suffix": [
+      "suffiks"
+    ],
+    "nickname": [
+      "kaldenavn"
+    ],
+    "email": [
+      "e-mail"
+    ],
+    "phone": [
+      "telefon"
+    ],
+    "home_phone": [
+      "hjemmetelefon"
+    ],
+    "work_phone": [
+      "arbejdstelefon"
+    ],
+    "company": [
+      "selskab"
+    ],
+    "job_title": [
+      "stillingsbetegnelse"
+    ],
+    "department": [
+      "afdeling"
+    ],
+    "industry": [
+      "industri"
+    ],
+    "address_line1": [
+      "adresselinje 1",
+      "adresselinje-1",
+      "adresselinje1",
+      "adresselinje_1"
+    ],
+    "address_line2": [
+      "adresselinje 2",
+      "adresselinje-2",
+      "adresselinje2",
+      "adresselinje_2"
+    ],
+    "city": [
+      "by"
+    ],
+    "state": [
+      "tilstand"
+    ],
+    "postal_code": [
+      "postnummer"
+    ],
+    "country": [
+      "land"
+    ],
+    "full_address": [
+      "fulde adresse",
+      "fulde-adresse",
+      "fulde_adresse",
+      "fuldeadresse"
+    ],
+    "website": [
+      "hjemmeside"
+    ],
+    "twitter": [
+      "kvidre"
+    ],
+    "birthday": [
+      "fodselsdag",
+      "fødselsdag"
+    ],
+    "age": [
+      "alder"
+    ],
+    "notes": [
+      "noter"
+    ],
+    "message": [
+      "besked"
+    ],
+    "subject": [
+      "emne"
+    ],
+    "company_size": [
+      "virksomhedens storrelse",
+      "virksomhedens størrelse",
+      "virksomhedens-størrelse",
+      "virksomhedens_storrelse",
+      "virksomhedens_størrelse",
+      "virksomhedensstorrelse",
+      "virksomhedensstørrelse"
+    ],
+    "revenue": [
+      "indtaegt",
+      "indtægt"
+    ]
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "language_code": "pt",
+  "language_name": "Portuguese",
+  "generated_at": "2026-03-01T10:14:19.630698+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "primeiro nome",
+      "primeiro-nome",
+      "primeiro_nome",
+      "primeironome"
+    ],
+    "last_name": [
+      "sobrenome"
+    ],
+    "full_name": [
+      "nome completo",
+      "nome-completo",
+      "nome_completo",
+      "nomecompleto"
+    ],
+    "middle_name": [
+      "nome do meio",
+      "nome-do-meio",
+      "nome_do_meio",
+      "nomedomeio"
+    ],
+    "prefix": [
+      "prefixo"
+    ],
+    "suffix": [
+      "sufixo"
+    ],
+    "nickname": [
+      "apelido"
+    ],
+    "email": [
+      "e-mail"
+    ],
+    "phone": [
+      "telefone"
+    ],
+    "home_phone": [
+      "telefone residencial",
+      "telefone-residencial",
+      "telefone_residencial",
+      "telefoneresidencial"
+    ],
+    "work_phone": [
+      "telefone comercial",
+      "telefone-comercial",
+      "telefone_comercial",
+      "telefonecomercial"
+    ],
+    "job_title": [
+      "cargo"
+    ],
+    "department": [
+      "departamento"
+    ],
+    "industry": [
+      "industria",
+      "indústria"
+    ],
+    "address_line1": [
+      "endereco linha 1",
+      "endereco_linha_1",
+      "enderecolinha1",
+      "endereço linha 1",
+      "endereço-linha-1",
+      "endereço_linha_1",
+      "endereçolinha1"
+    ],
+    "address_line2": [
+      "linha de endereco 2",
+      "linha de endereço 2",
+      "linha-de-endereço-2",
+      "linha_de_endereco_2",
+      "linha_de_endereço_2",
+      "linhadeendereco2",
+      "linhadeendereço2"
+    ],
+    "city": [
+      "cidade"
+    ],
+    "state": [
+      "estado"
+    ],
+    "postal_code": [
+      "codigo postal",
+      "codigo_postal",
+      "codigopostal",
+      "código postal",
+      "código-postal",
+      "código_postal",
+      "códigopostal"
+    ],
+    "country": [
+      "pais",
+      "país"
+    ],
+    "full_address": [
+      "endereco completo",
+      "endereco_completo",
+      "enderecocompleto",
+      "endereço completo",
+      "endereço-completo",
+      "endereço_completo",
+      "endereçocompleto"
+    ],
+    "birthday": [
+      "aniversario",
+      "aniversário"
+    ],
+    "age": [
+      "idade"
+    ],
+    "notes": [
+      "notas"
+    ],
+    "message": [
+      "mensagem"
+    ],
+    "subject": [
+      "assunto"
+    ],
+    "company_size": [
+      "tamanho da empresa",
+      "tamanho-da-empresa",
+      "tamanho_da_empresa",
+      "tamanhodaempresa"
+    ],
+    "revenue": [
+      "receita"
+    ]
+  }
+}

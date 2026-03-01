@@ -1,0 +1,193 @@
+{
+  "language_code": "ja",
+  "language_name": "Japanese",
+  "generated_at": "2026-03-01T10:15:07.446557+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "hua-sutone-mu",
+      "huasutonemu",
+      "ファーストネーム"
+    ],
+    "last_name": [
+      "Miao Zi",
+      "MiaoZi",
+      "Miao_Zi",
+      "苗字"
+    ],
+    "full_name": [
+      "hurune-mu",
+      "hurunemu",
+      "フルネーム"
+    ],
+    "middle_name": [
+      "midorune-mu",
+      "midorunemu",
+      "ミドルネーム"
+    ],
+    "prefix": [
+      "Jie Tou Yu",
+      "JieTouYu",
+      "Jie_Tou_Yu",
+      "接頭語"
+    ],
+    "suffix": [
+      "sahuitsukusu",
+      "サフィックス"
+    ],
+    "nickname": [
+      "nitsukune-mu",
+      "nitsukunemu",
+      "ニックネーム"
+    ],
+    "email": [
+      "Dian Zi me-ru",
+      "DianZimeru",
+      "Dian_Zi_me-ru",
+      "電子メール"
+    ],
+    "phone": [
+      "Dian Hua",
+      "DianHua",
+      "Dian_Hua",
+      "電話"
+    ],
+    "home_phone": [
+      "Zi Zhai noDian Hua",
+      "ZiZhainoDianHua",
+      "Zi_Zhai_noDian_Hua",
+      "自宅の電話"
+    ],
+    "work_phone": [
+      "Zhi Chang noDian Hua",
+      "ZhiChangnoDianHua",
+      "Zhi_Chang_noDian_Hua",
+      "職場の電話"
+    ],
+    "fax": [
+      "huatsukusu",
+      "ファックス"
+    ],
+    "whatsapp": [
+      "watsutsuatsupu",
+      "ワッツアップ"
+    ],
+    "company": [
+      "Hui She",
+      "HuiShe",
+      "Hui_She",
+      "会社"
+    ],
+    "job_title": [
+      "Yi Zhi",
+      "YiZhi",
+      "Yi_Zhi",
+      "役職"
+    ],
+    "department": [
+      "Bu Men",
+      "BuMen",
+      "Bu_Men",
+      "部門"
+    ],
+    "industry": [
+      "Ye Jie",
+      "YeJie",
+      "Ye_Jie",
+      "業界"
+    ],
+    "address_line1": [
+      "Zhu Suo 1",
+      "ZhuSuo1",
+      "Zhu_Suo_1",
+      "住所1"
+    ],
+    "address_line2": [
+      "Zhu Suo  2 Xing Mu",
+      "ZhuSuo2XingMu",
+      "Zhu_Suo_2_Xing_Mu",
+      "住所 2 行目",
+      "住所-2-行目",
+      "住所2行目",
+      "住所_2_行目"
+    ],
+    "postal_code": [
+      "You Bian Fan Hao",
+      "YouBianFanHao",
+      "You_Bian_Fan_Hao",
+      "郵便番号"
+    ],
+    "full_address": [
+      "Wan Quan naZhu Suo",
+      "WanQuannaZhuSuo",
+      "Wan_Quan_naZhu_Suo",
+      "完全な住所"
+    ],
+    "website": [
+      "websaito",
+      "webサイト"
+    ],
+    "linkedin": [
+      "rinkuin",
+      "リンクイン"
+    ],
+    "twitter": [
+      "tsuitsuta",
+      "tsuitsuta-",
+      "ツイッター"
+    ],
+    "facebook": [
+      "hueisubutsuku",
+      "フェイスブック"
+    ],
+    "instagram": [
+      "insutaguramu",
+      "インスタグラム"
+    ],
+    "github": [
+      "gitsutohabu",
+      "ギットハブ"
+    ],
+    "youtube": [
+      "yu-chiyu-bu",
+      "yuchiyubu",
+      "ユーチューブ"
+    ],
+    "tiktok": [
+      "teitsukutotsuku",
+      "ティックトック"
+    ],
+    "birthday": [
+      "Dan Sheng Ri",
+      "DanShengRi",
+      "Dan_Sheng_Ri",
+      "誕生日"
+    ],
+    "notes": [
+      "メモ"
+    ],
+    "message": [
+      "metsuse-zi",
+      "metsusezi",
+      "メッセージ"
+    ],
+    "subject": [
+      "Zhu Ti",
+      "ZhuTi",
+      "Zhu_Ti",
+      "主題"
+    ],
+    "company_size": [
+      "Hui She Gui Mo",
+      "HuiSheGuiMo",
+      "Hui_She_Gui_Mo",
+      "会社規模"
+    ],
+    "revenue": [
+      "Shou Yi",
+      "ShouYi",
+      "Shou_Yi",
+      "収益"
+    ]
+  }
+}

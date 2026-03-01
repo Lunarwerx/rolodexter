@@ -75,7 +75,7 @@ class TestLoading:
         assert len(registry.available_services) >= 15
 
     def test_version(self, registry: PatternRegistry) -> None:
-        assert registry.version == "1.2.0"
+        assert registry.version == "1.5.0"
 
     def test_custom_patterns(self) -> None:
         custom = {
@@ -1049,7 +1049,7 @@ class TestAgeField:
 
 
 class TestI18nAliases:
-    """Verify internationalized aliases from smus_bark definitions.json."""
+    """Verify i18n aliases resolve from the i18n language blocks."""
 
     @pytest.mark.parametrize(
         "alias, expected",
@@ -1057,31 +1057,61 @@ class TestI18nAliases:
             # Romanian
             ("prenume", "first_name"),
             ("nume", "last_name"),
-            ("nume_complet", "full_name"),
-            ("adresa_email", "email"),
+            ("numele_complet", "full_name"),
+            ("e-mail", "email"),
             ("mesaj", "message"),
             ("subiect", "subject"),
             # German
             ("vorname", "first_name"),
             ("nachname", "last_name"),
-            # French
-            ("nom", "last_name"),
-            ("nom_complet", "full_name"),
-            ("courriel", "email"),
-            ("sujet", "subject"),
-            ("société", "company"),
-            # Other
-            ("companie", "company"),
             ("firma", "company"),
-            ("telefon", "phone"),
-            ("custtel", "phone"),
-            ("custemail", "email"),
-            ("user_email", "email"),
-            ("custname", "full_name"),
+            ("nachricht", "message"),
+            ("thema", "subject"),
+            # French
+            ("nom_de_famille", "last_name"),
+            ("nom_et_prenom", "full_name"),
+            ("prenom", "first_name"),
+            ("sujet", "subject"),
+            ("entreprise", "company"),
+            # Spanish
+            ("nombre_de_pila", "first_name"),
+            ("apellido", "last_name"),
+            ("correo_electronico", "email"),
+            ("empresa", "company"),
+            ("ciudad", "city"),
+            # Portuguese
+            ("sobrenome", "last_name"),
+            ("codigo_postal", "postal_code"),
+            # Italian
+            ("cognome", "last_name"),
+            ("azienda", "company"),
+            ("messaggio", "message"),
+            # Dutch
+            ("voornaam", "first_name"),
+            ("achternaam", "last_name"),
+            ("bedrijf", "company"),
+            ("bericht", "message"),
+            # Romanian extras
+            ("companie", "company"),
+            # Polish
+            ("imie", "first_name"),
+            ("nazwisko", "last_name"),
+            ("wiadomosc", "message"),
+            # Turkish
+            ("ilk_adi", "first_name"),
+            ("soyisim", "last_name"),
+            ("eposta", "email"),
         ],
     )
     def test_i18n_alias_resolves(self, registry: PatternRegistry, alias: str, expected: str) -> None:
         assert registry.exact_lookup(alias) == expected
+
+    def test_bot_specific_aliases_via_service(self, registry: PatternRegistry) -> None:
+        """Bot-convention aliases (custname, custemail, etc.) are in form_bot service, not i18n."""
+        assert registry.service_lookup("custtel", "form_bot") == "phone"
+        assert registry.service_lookup("custemail", "form_bot") == "email"
+        assert registry.service_lookup("user_email", "form_bot") == "email"
+        assert registry.service_lookup("custname", "form_bot") == "full_name"
 
 
 class TestExtendedSourceAliases:
@@ -1246,5 +1276,147 @@ class TestFormBotGuessRequiredValueKeywords:
 class TestPatternVersionBump:
     """Verify patterns.json version was bumped for this release."""
 
-    def test_version_is_1_2_0(self, registry: PatternRegistry) -> None:
-        assert registry.version == "1.2.0"
+    def test_version_is_1_5_0(self, registry: PatternRegistry) -> None:
+        assert registry.version == "1.5.0"
+
+
+# ═══════════════════════════════════════════════════════════════
+#  I18N SYSTEM TESTS
+# ═══════════════════════════════════════════════════════════════
+
+
+class TestI18nLanguageSelection:
+    """Test the languages parameter for selective i18n loading."""
+
+    def test_all_languages_loaded_by_default(self) -> None:
+        reg = PatternRegistry()
+        assert len(reg.loaded_languages) >= 20
+        assert "es" in reg.loaded_languages
+        assert "fr" in reg.loaded_languages
+        assert "de" in reg.loaded_languages
+        assert "ru" in reg.loaded_languages
+        assert "ja" in reg.loaded_languages
+
+    def test_english_only_with_none(self) -> None:
+        reg = PatternRegistry(languages=None)
+        assert reg.loaded_languages == []
+        # English still works
+        assert reg.exact_lookup("email") == "email"
+        assert reg.exact_lookup("first_name") == "first_name"
+        # i18n alias does NOT resolve
+        assert reg.exact_lookup("correo") is None
+        assert reg.exact_lookup("vorname") is None
+        assert reg.exact_lookup("prenume") is None
+
+    def test_english_only_with_empty_list(self) -> None:
+        reg = PatternRegistry(languages=[])
+        assert reg.loaded_languages == []
+        assert reg.exact_lookup("correo") is None
+
+    def test_single_language_string(self) -> None:
+        reg = PatternRegistry(languages="es")
+        assert reg.loaded_languages == ["es"]
+        # Spanish works
+        assert reg.exact_lookup("correo_electronico") == "email"
+        assert reg.exact_lookup("empresa") == "company"
+        # German does not
+        assert reg.exact_lookup("vorname") is None
+        assert reg.exact_lookup("nachname") is None
+
+    def test_selective_language_list(self) -> None:
+        reg = PatternRegistry(languages=["fr", "de"])
+        assert sorted(reg.loaded_languages) == ["de", "fr"]
+        # French works
+        assert reg.exact_lookup("prenom") == "first_name"
+        # German works
+        assert reg.exact_lookup("vorname") == "first_name"
+        # Spanish does not
+        assert reg.exact_lookup("correo_electronico") is None
+        # Romanian does not
+        assert reg.exact_lookup("prenume") is None
+
+    def test_nonexistent_language_ignored(self) -> None:
+        reg = PatternRegistry(languages=["xx_fake", "es"])
+        assert reg.loaded_languages == ["es"]
+        assert reg.exact_lookup("correo_electronico") == "email"
+
+
+class TestI18nAvailableLanguages:
+    """Test the available_languages property."""
+
+    def test_available_languages_lists_all(self) -> None:
+        reg = PatternRegistry(languages=None)
+        langs = reg.available_languages
+        # All 20 language files are discoverable
+        assert len(langs) >= 20
+        for code in [
+            "es",
+            "fr",
+            "de",
+            "ro",
+            "pt",
+            "it",
+            "nl",
+            "ja",
+            "pl",
+            "tr",
+            "ru",
+            "zh",
+            "ko",
+            "ar",
+            "hi",
+            "sv",
+            "da",
+            "nb",
+            "fi",
+            "cs",
+        ]:
+            assert code in langs, f"{code} not in available_languages"
+
+    def test_available_vs_loaded(self) -> None:
+        reg = PatternRegistry(languages=["es"])
+        assert len(reg.available_languages) >= 20
+        assert len(reg.loaded_languages) == 1
+
+
+class TestI18nContactMapper:
+    """Test that ContactMapper passes languages through."""
+
+    def test_mapper_default_loads_all(self) -> None:
+        mapper = ContactMapper()
+        assert len(mapper.registry.loaded_languages) >= 20
+        m = mapper.identify("correo_electronico")
+        assert m.canonical == "email"
+
+    def test_mapper_english_only(self) -> None:
+        mapper = ContactMapper(languages=None)
+        assert mapper.registry.loaded_languages == []
+        # Spanish i18n alias does NOT resolve via exact lookup
+        assert mapper.registry.exact_lookup("correo") is None
+        assert mapper.registry.exact_lookup("vorname") is None
+        # English still works
+        m = mapper.identify("email")
+        assert m.canonical == "email"
+
+    def test_mapper_selective_languages(self) -> None:
+        mapper = ContactMapper(languages=["de"])
+        m = mapper.identify("vorname")
+        assert m.canonical == "first_name"
+        # Spanish not loaded — verify via exact lookup
+        assert mapper.registry.exact_lookup("correo") is None
+
+    def test_mapper_payload_with_i18n(self) -> None:
+        mapper = ContactMapper(languages=["es", "fr"])
+        result = mapper.map_payload(
+            {
+                "correo_electronico": "juan@example.com",
+                "nombre_de_pila": "Juan",
+                "apellido": "García",
+                "empresa": "Acme",
+                "e-mail": "duplicate@example.com",
+            }
+        )
+        assert result.normalized["email"] == ["juan@example.com", "duplicate@example.com"]
+        assert result.normalized["first_name"] == "Juan"
+        assert result.normalized["last_name"] == "García"
+        assert result.normalized["company"] == "Acme"

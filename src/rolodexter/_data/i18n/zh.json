@@ -1,0 +1,200 @@
+{
+  "language_code": "zh",
+  "language_name": "Chinese (Simplified)",
+  "generated_at": "2026-03-01T10:15:03.633803+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "full_name": [
+      "Xing Ming",
+      "XingMing",
+      "Xing_Ming",
+      "姓名"
+    ],
+    "middle_name": [
+      "Zhong Jian Ming Zi",
+      "ZhongJianMingZi",
+      "Zhong_Jian_Ming_Zi",
+      "中间名字"
+    ],
+    "prefix": [
+      "Qian Zhui",
+      "QianZhui",
+      "Qian_Zhui",
+      "前缀"
+    ],
+    "suffix": [
+      "Hou Zhui",
+      "HouZhui",
+      "Hou_Zhui",
+      "后缀"
+    ],
+    "nickname": [
+      "Ni Cheng",
+      "NiCheng",
+      "Ni_Cheng",
+      "昵称"
+    ],
+    "email": [
+      "Dian Zi You Jian",
+      "DianZiYouJian",
+      "Dian_Zi_You_Jian",
+      "电子邮件"
+    ],
+    "phone": [
+      "Dian Hua",
+      "DianHua",
+      "Dian_Hua",
+      "电话"
+    ],
+    "home_phone": [
+      "Jia Ting Dian Hua",
+      "JiaTingDianHua",
+      "Jia_Ting_Dian_Hua",
+      "家庭电话"
+    ],
+    "work_phone": [
+      "Gong Zuo Dian Hua",
+      "GongZuoDianHua",
+      "Gong_Zuo_Dian_Hua",
+      "工作电话"
+    ],
+    "fax": [
+      "Chuan Zhen",
+      "ChuanZhen",
+      "Chuan_Zhen",
+      "传真"
+    ],
+    "company": [
+      "Gong Si",
+      "GongSi",
+      "Gong_Si",
+      "公司"
+    ],
+    "job_title": [
+      "Zhi Cheng",
+      "ZhiCheng",
+      "Zhi_Cheng",
+      "职称"
+    ],
+    "department": [
+      "Bu Men",
+      "BuMen",
+      "Bu_Men",
+      "部门"
+    ],
+    "industry": [
+      "Xing Ye",
+      "XingYe",
+      "Xing_Ye",
+      "行业"
+    ],
+    "address_line1": [
+      "Di Zhi Di Yi Xing",
+      "DiZhiDiYiXing",
+      "Di_Zhi_Di_Yi_Xing",
+      "地址第一行"
+    ],
+    "address_line2": [
+      "Di Zhi Xian 2",
+      "DiZhiXian2",
+      "Di_Zhi_Xian_2",
+      "地址线2"
+    ],
+    "city": [
+      "Cheng Shi",
+      "ChengShi",
+      "Cheng_Shi",
+      "城市"
+    ],
+    "state": [
+      "Zhuang Tai",
+      "ZhuangTai",
+      "Zhuang_Tai",
+      "状态"
+    ],
+    "postal_code": [
+      "You Zheng Bian Ma",
+      "YouZhengBianMa",
+      "You_Zheng_Bian_Ma",
+      "邮政编码"
+    ],
+    "country": [
+      "Guo Jia",
+      "GuoJia",
+      "Guo_Jia",
+      "国家"
+    ],
+    "full_address": [
+      "Wan Zheng Di Zhi",
+      "WanZhengDiZhi",
+      "Wan_Zheng_Di_Zhi",
+      "完整地址"
+    ],
+    "website": [
+      "Wang Zhan",
+      "WangZhan",
+      "Wang_Zhan",
+      "网站"
+    ],
+    "linkedin": [
+      "Lian Jie",
+      "LianJie",
+      "Lian_Jie",
+      "链接"
+    ],
+    "twitter": [
+      "Ji Ji Zha Zha",
+      "JiJiZhaZha",
+      "Ji_Ji_Zha_Zha",
+      "叽叽喳喳"
+    ],
+    "tiktok": [
+      "Dou Yin",
+      "DouYin",
+      "Dou_Yin",
+      "抖音"
+    ],
+    "birthday": [
+      "Sheng Ri",
+      "ShengRi",
+      "Sheng_Ri",
+      "生日"
+    ],
+    "age": [
+      "Nian Ling",
+      "NianLing",
+      "Nian_Ling",
+      "年龄"
+    ],
+    "notes": [
+      "Bi Ji",
+      "BiJi",
+      "Bi_Ji",
+      "笔记"
+    ],
+    "message": [
+      "Xin Xi",
+      "XinXi",
+      "Xin_Xi",
+      "信息"
+    ],
+    "subject": [
+      "Zhu Ti",
+      "ZhuTi",
+      "Zhu_Ti",
+      "主题"
+    ],
+    "company_size": [
+      "Gong Si Gui Mo",
+      "GongSiGuiMo",
+      "Gong_Si_Gui_Mo",
+      "公司规模"
+    ],
+    "revenue": [
+      "Shou Ru",
+      "ShouRu",
+      "Shou_Ru",
+      "收入"
+    ]
+  }
+}

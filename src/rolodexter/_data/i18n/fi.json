@@ -1,0 +1,128 @@
+{
+  "language_code": "fi",
+  "language_name": "Finnish",
+  "generated_at": "2026-03-01T10:15:30.672679+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "etunimi"
+    ],
+    "last_name": [
+      "sukunimi"
+    ],
+    "full_name": [
+      "koko nimi",
+      "koko-nimi",
+      "koko_nimi",
+      "kokonimi"
+    ],
+    "middle_name": [
+      "toinen nimi",
+      "toinen-nimi",
+      "toinen_nimi",
+      "toinennimi"
+    ],
+    "prefix": [
+      "etuliite"
+    ],
+    "suffix": [
+      "paate",
+      "pääte"
+    ],
+    "nickname": [
+      "lempinimi"
+    ],
+    "email": [
+      "sahkoposti",
+      "sähköposti"
+    ],
+    "phone": [
+      "puhelin"
+    ],
+    "home_phone": [
+      "kotipuhelin"
+    ],
+    "work_phone": [
+      "tyopuhelin",
+      "työpuhelin"
+    ],
+    "fax": [
+      "faksi"
+    ],
+    "company": [
+      "yritys"
+    ],
+    "job_title": [
+      "tehtavanimike",
+      "tehtävänimike"
+    ],
+    "department": [
+      "osasto"
+    ],
+    "industry": [
+      "teollisuus"
+    ],
+    "address_line1": [
+      "osoiterivi1"
+    ],
+    "address_line2": [
+      "osoiterivi 2",
+      "osoiterivi-2",
+      "osoiterivi2",
+      "osoiterivi_2"
+    ],
+    "city": [
+      "kaupunki"
+    ],
+    "state": [
+      "osavaltio"
+    ],
+    "postal_code": [
+      "postinumero"
+    ],
+    "country": [
+      "maassa"
+    ],
+    "full_address": [
+      "taydellinen osoite",
+      "taydellinen_osoite",
+      "taydellinenosoite",
+      "täydellinen osoite",
+      "täydellinen-osoite",
+      "täydellinen_osoite",
+      "täydellinenosoite"
+    ],
+    "website": [
+      "verkkosivuilla"
+    ],
+    "twitter": [
+      "viserrys"
+    ],
+    "birthday": [
+      "syntymapaiva",
+      "syntymäpäivä"
+    ],
+    "age": [
+      "ika",
+      "ikä"
+    ],
+    "notes": [
+      "muistiinpanoja"
+    ],
+    "message": [
+      "viesti"
+    ],
+    "subject": [
+      "aihe"
+    ],
+    "company_size": [
+      "yrityksen koko",
+      "yrityksen-koko",
+      "yrityksen_koko",
+      "yrityksenkoko"
+    ],
+    "revenue": [
+      "tuloja"
+    ]
+  }
+}

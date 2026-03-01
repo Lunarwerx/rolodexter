@@ -1,0 +1,158 @@
+{
+  "language_code": "ro",
+  "language_name": "Romanian",
+  "generated_at": "2026-03-01T10:14:20.610038+00:00",
+  "source_version": "1.5.0",
+  "fields": {
+    "first_name": [
+      "prenume"
+    ],
+    "last_name": [
+      "nume"
+    ],
+    "full_name": [
+      "numele complet",
+      "numele-complet",
+      "numele_complet",
+      "numelecomplet"
+    ],
+    "middle_name": [
+      "al doilea prenume",
+      "al-doilea-prenume",
+      "al_doilea_prenume",
+      "aldoileaprenume"
+    ],
+    "suffix": [
+      "sufix"
+    ],
+    "nickname": [
+      "porecla"
+    ],
+    "email": [
+      "e-mail"
+    ],
+    "phone": [
+      "telefon"
+    ],
+    "home_phone": [
+      "telefon de acasa",
+      "telefon de acasă",
+      "telefon-de-acasă",
+      "telefon_de_acasa",
+      "telefon_de_acasă",
+      "telefondeacasa",
+      "telefondeacasă"
+    ],
+    "work_phone": [
+      "telefon de serviciu",
+      "telefon-de-serviciu",
+      "telefon_de_serviciu",
+      "telefondeserviciu"
+    ],
+    "company": [
+      "companie"
+    ],
+    "job_title": [
+      "denumirea functiei",
+      "denumirea funcției",
+      "denumirea-funcției",
+      "denumirea_functiei",
+      "denumirea_funcției",
+      "denumireafunctiei",
+      "denumireafuncției"
+    ],
+    "department": [
+      "departament"
+    ],
+    "industry": [
+      "industrie"
+    ],
+    "address_line1": [
+      "adresa randul 1",
+      "adresa rândul 1",
+      "adresa-rândul-1",
+      "adresa_randul_1",
+      "adresa_rândul_1",
+      "adresarandul1",
+      "adresarândul1"
+    ],
+    "address_line2": [
+      "linia de adresa 2",
+      "linia de adresă 2",
+      "linia-de-adresă-2",
+      "linia_de_adresa_2",
+      "linia_de_adresă_2",
+      "liniadeadresa2",
+      "liniadeadresă2"
+    ],
+    "city": [
+      "oras",
+      "oraş"
+    ],
+    "state": [
+      "stat"
+    ],
+    "postal_code": [
+      "cod postal",
+      "cod poștal",
+      "cod-poștal",
+      "cod_postal",
+      "cod_poștal",
+      "codpostal",
+      "codpoștal"
+    ],
+    "country": [
+      "tara",
+      "ţară"
+    ],
+    "full_address": [
+      "adresa completa",
+      "adresa completă",
+      "adresa-completă",
+      "adresa_completa",
+      "adresa_completă",
+      "adresacompleta",
+      "adresacompletă"
+    ],
+    "website": [
+      "site-ul web",
+      "site-ul-web",
+      "site-ul_web",
+      "siteulweb"
+    ],
+    "twitter": [
+      "stare de nervozitate",
+      "stare-de-nervozitate",
+      "stare_de_nervozitate",
+      "staredenervozitate"
+    ],
+    "birthday": [
+      "ziua de nastere",
+      "ziua de naștere",
+      "ziua-de-naștere",
+      "ziua_de_nastere",
+      "ziua_de_naștere",
+      "ziuadenastere",
+      "ziuadenaștere"
+    ],
+    "age": [
+      "varsta",
+      "vârstă"
+    ],
+    "message": [
+      "mesaj"
+    ],
+    "subject": [
+      "subiect"
+    ],
+    "company_size": [
+      "dimensiunea companiei",
+      "dimensiunea-companiei",
+      "dimensiunea_companiei",
+      "dimensiuneacompaniei"
+    ],
+    "revenue": [
+      "venituri"
+    ]
+  }
+}
