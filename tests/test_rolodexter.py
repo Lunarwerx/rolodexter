@@ -657,16 +657,22 @@ class TestPhoneNormalizer:
         "raw, expected",
         [
             ("+1-555-123-4567", "+15551234567"),
-            ("(555) 123-4567", "5551234567"),
-            ("555.123.4567", "5551234567"),
             ("+44 20 7946 0958", "+442079460958"),
-            ("15551234567890", "+15551234567890"),
             ("", ""),
             ("   ", "   "),
         ],
     )
     def test_normalize(self, raw: str, expected: str) -> None:
         assert PhoneNormalizer.normalize(raw) == expected
+
+    def test_us_local_with_region(self) -> None:
+        """US local numbers need default_region='US' for correct E.164."""
+        result = PhoneNormalizer.normalize("(555) 123-4567", default_region="US")
+        assert result == "+15551234567"
+
+    def test_us_dots_with_region(self) -> None:
+        result = PhoneNormalizer.normalize("555.123.4567", default_region="US")
+        assert result == "+15551234567"
 
     def test_none_passthrough(self) -> None:
         assert PhoneNormalizer.normalize(None) is None  # type: ignore[arg-type]
@@ -1410,25 +1416,186 @@ class TestI18nContactMapper:
 
 
 # ═══════════════════════════════════════════════════════════════
-#  v2.1 — PHONE NORMALIZER E.164 UPGRADE
+#  v2.1 — BUILT-IN PHONE MODULE (rolodexter._phone)
 # ═══════════════════════════════════════════════════════════════
 
 
+class TestPhoneModuleParse:
+    """Test the built-in _phone.parse() function directly."""
+
+    def test_e164_passthrough(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+15551234567")
+        assert p is not None
+        assert p.calling_code == 1
+        assert p.national_number == "5551234567"
+        assert p.e164 == "+15551234567"
+
+    def test_us_formatted(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+1 (555) 123-4567")
+        assert p is not None
+        assert p.e164 == "+15551234567"
+
+    def test_uk_number(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+44 20 7946 0958")
+        assert p is not None
+        assert p.e164 == "+442079460958"
+
+    def test_japan_number(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+81 3-1234-5678")
+        assert p is not None
+        assert p.e164 == "+81312345678"
+
+    def test_germany_number(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+49 30 1234567")
+        assert p is not None
+        assert p.e164 == "+49301234567"
+
+    def test_india_number(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+91 98765 43210")
+        assert p is not None
+        assert p.e164 == "+919876543210"
+
+    def test_australia_with_region(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("(02) 1234 5678", default_region="AU")
+        assert p is not None
+        assert p.calling_code == 61
+        assert p.e164.startswith("+61")
+
+    def test_uk_local_with_region(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("020 7946 0958", default_region="GB")
+        assert p is not None
+        assert p.e164 == "+442079460958"
+
+    def test_france_local_with_region(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("01 23 45 67 89", default_region="FR")
+        assert p is not None
+        assert p.e164 == "+33123456789"
+
+    def test_double_zero_prefix(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("0044 20 7946 0958")
+        assert p is not None
+        assert p.e164 == "+442079460958"
+
+    def test_us_011_prefix(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("011 44 20 7946 0958")
+        assert p is not None
+        assert p.e164 == "+442079460958"
+
+    def test_vanity_number(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+1-800-FLOWERS")
+        assert p is not None
+        assert p.calling_code == 1
+        assert p.e164 == "+18003569377"
+
+    def test_china_mobile(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+86 138 0013 8000")
+        assert p is not None
+        assert p.e164 == "+8613800138000"
+
+    def test_brazil_mobile(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+55 11 91234-5678")
+        assert p is not None
+        assert p.e164 == "+5511912345678"
+
+    def test_none_returns_none(self) -> None:
+        from rolodexter._phone import parse
+        assert parse(None) is None  # type: ignore[arg-type]
+
+    def test_empty_returns_none(self) -> None:
+        from rolodexter._phone import parse
+        assert parse("") is None
+
+    def test_garbage_returns_none(self) -> None:
+        from rolodexter._phone import parse
+        assert parse("no phone here") is None
+
+    def test_too_short_returns_none(self) -> None:
+        from rolodexter._phone import parse
+        assert parse("123") is None
+
+    def test_is_valid_property(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+15551234567")
+        assert p is not None
+        assert p.is_valid is True
+
+    def test_country_codes_property(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+442079460958")
+        assert p is not None
+        assert "GB" in p.country_codes
+
+    def test_str_returns_e164(self) -> None:
+        from rolodexter._phone import parse
+        p = parse("+15551234567")
+        assert str(p) == "+15551234567"
+
+
+class TestPhoneModuleFormatE164:
+    """Test the format_e164() convenience function."""
+
+    def test_basic(self) -> None:
+        from rolodexter._phone import format_e164
+        assert format_e164("+1 (555) 123-4567") == "+15551234567"
+
+    def test_with_region(self) -> None:
+        from rolodexter._phone import format_e164
+        result = format_e164("020 7946 0958", default_region="GB")
+        assert result == "+442079460958"
+
+    def test_returns_none_on_fail(self) -> None:
+        from rolodexter._phone import format_e164
+        assert format_e164("abc") is None
+
+
+class TestPhoneModuleIsValid:
+    """Test the is_valid() convenience function."""
+
+    def test_valid_us(self) -> None:
+        from rolodexter._phone import is_valid
+        assert is_valid("+15551234567") is True
+
+    def test_invalid_garbage(self) -> None:
+        from rolodexter._phone import is_valid
+        assert is_valid("hello") is False
+
+
 class TestPhoneNormalizerE164:
-    """Test the upgraded PhoneNormalizer with optional phonenumbers lib."""
+    """Test PhoneNormalizer.normalize() uses built-in E.164 module."""
 
-    def test_regex_fallback_basic(self) -> None:
-        """Regex fallback still works for US-like numbers."""
-        result = PhoneNormalizer.normalize("555-123-4567")
-        assert result == "5551234567"
+    def test_us_number(self) -> None:
+        result = PhoneNormalizer.normalize("+1 (555) 123-4567")
+        assert result == "+15551234567"
 
-    def test_regex_fallback_international(self) -> None:
+    def test_uk_number(self) -> None:
         result = PhoneNormalizer.normalize("+44 20 7946 0958")
-        assert "44" in result and "7946" in result
+        assert result == "+442079460958"
 
-    def test_regex_fallback_long_number_prepends_plus(self) -> None:
-        result = PhoneNormalizer.normalize("44207946095812")
-        assert result.startswith("+")
+    def test_japan_number(self) -> None:
+        result = PhoneNormalizer.normalize("+81 3-1234-5678")
+        assert result == "+81312345678"
+
+    def test_default_region_au(self) -> None:
+        result = PhoneNormalizer.normalize("(02) 1234 5678", default_region="AU")
+        assert result.startswith("+61")
+
+    def test_default_region_gb(self) -> None:
+        result = PhoneNormalizer.normalize("020 7946 0958", default_region="GB")
+        assert result == "+442079460958"
 
     def test_empty_returns_as_is(self) -> None:
         assert PhoneNormalizer.normalize("") == ""
@@ -1440,7 +1607,6 @@ class TestPhoneNormalizerE164:
         assert PhoneNormalizer.normalize(12345) == 12345  # type: ignore[arg-type]
 
     def test_garbage_returns_original(self) -> None:
-        # No digits at all → returns original
         assert PhoneNormalizer.normalize("no phone here") == "no phone here"
 
     def test_too_short_returns_original(self) -> None:
@@ -1449,49 +1615,31 @@ class TestPhoneNormalizerE164:
     def test_whitespace_only_returns_original(self) -> None:
         assert PhoneNormalizer.normalize("   ") == "   "
 
-    def test_e164_output_when_phonenumbers_available(self) -> None:
-        """If phonenumbers is installed, E.164 formatting should be used."""
-        try:
-            import phonenumbers  # noqa: F401
+    def test_double_zero_international(self) -> None:
+        result = PhoneNormalizer.normalize("0044 20 7946 0958")
+        assert result == "+442079460958"
 
-            result = PhoneNormalizer.normalize("+1 (555) 123-4567")
-            assert result == "+15551234567"
-        except ImportError:
-            pytest.skip("phonenumbers not installed")
+    def test_vanity_number(self) -> None:
+        result = PhoneNormalizer.normalize("+1-800-FLOWERS")
+        assert result == "+18003569377"
 
-    def test_e164_international_uk(self) -> None:
-        try:
-            import phonenumbers  # noqa: F401
+    def test_india_number(self) -> None:
+        result = PhoneNormalizer.normalize("+91 98765 43210")
+        assert result == "+919876543210"
 
-            result = PhoneNormalizer.normalize("+44 20 7946 0958")
-            assert result == "+442079460958"
-        except ImportError:
-            pytest.skip("phonenumbers not installed")
+    def test_china_number(self) -> None:
+        result = PhoneNormalizer.normalize("+86 138 0013 8000")
+        assert result == "+8613800138000"
 
-    def test_e164_international_japan(self) -> None:
-        try:
-            import phonenumbers  # noqa: F401
-
-            result = PhoneNormalizer.normalize("+81 3-1234-5678")
-            assert result == "+81312345678"
-        except ImportError:
-            pytest.skip("phonenumbers not installed")
-
-    def test_e164_invalid_number_falls_back(self) -> None:
-        """Invalid phone numbers fall back to regex strip."""
-        result = PhoneNormalizer.normalize("+99 000 000 0000")
-        # Should return something (regex fallback), not crash
+    def test_regex_fallback_unknown_code(self) -> None:
+        """Numbers that can't be parsed fall back to regex strip."""
+        result = PhoneNormalizer.normalize("+999 000 000 0000")
         assert isinstance(result, str)
 
-    def test_default_region_parameter(self) -> None:
-        """The default_region kwarg is accepted for phonenumbers parsing."""
-        try:
-            import phonenumbers  # noqa: F401
-
-            result = PhoneNormalizer.normalize("(02) 1234 5678", default_region="AU")
-            assert result.startswith("+61")
-        except ImportError:
-            pytest.skip("phonenumbers not installed")
+    def test_normalize_value_uses_e164(self) -> None:
+        """normalize_value() for phone fields uses E.164 formatting."""
+        result = normalize_value("phone", "+44 20 7946 0958")
+        assert result == "+442079460958"
 
 
 # ═══════════════════════════════════════════════════════════════

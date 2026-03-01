@@ -48,3 +48,4 @@ dmypy.json
 *.log
 *.tmp
 smus_bark/
+.audit_tmp/

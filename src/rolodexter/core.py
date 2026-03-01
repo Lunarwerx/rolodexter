@@ -211,24 +211,12 @@ class MappingResult:
 _PHONE_STRIP = re.compile(r"[^\d+]")
 
 
-def _phonenumbers_available() -> bool:
-    """Return True if the ``phonenumbers`` package is importable."""
-    try:
-        import phonenumbers as _pn  # noqa: F401
-
-        return True
-    except ImportError:
-        return False
-
-
 class PhoneNormalizer:
-    """Normalize phone values to E.164 when possible.
+    """Normalize phone values to E.164 via the built-in ``_phone`` module.
 
-    If the optional ``phonenumbers`` package is installed
-    (``pip install rolodexter[phone]``), numbers are parsed via
-    Google's libphonenumber and formatted as E.164.  When the
-    library is unavailable or parsing fails, a lightweight regex
-    fallback strips non-digit characters.
+    Uses rolodexter's own ITU metadata (230+ calling codes, zero external
+    dependencies) to parse and format phone numbers.  Falls back to a
+    lightweight regex strip when parsing cannot identify the number.
     """
 
     _STRIP = _PHONE_STRIP
@@ -242,17 +230,12 @@ class PhoneNormalizer:
         if not raw:
             return value
 
-        # ── E.164 via phonenumbers (optional) ───────────────────────
-        if _phonenumbers_available():
-            import phonenumbers
-            from phonenumbers import NumberParseException
+        # ── E.164 via built-in _phone module ────────────────────────
+        from . import _phone
 
-            try:
-                parsed = phonenumbers.parse(raw, default_region)
-                if phonenumbers.is_valid_number(parsed):
-                    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
-            except NumberParseException:
-                pass
+        result = _phone.format_e164(raw, default_region)
+        if result is not None:
+            return result
 
         # ── Regex fallback ──────────────────────────────────────────
         cleaned = cls._STRIP.sub("", raw)

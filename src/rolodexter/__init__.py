@@ -45,6 +45,7 @@ from .core import (
     StringNormalizer,
     normalize_value,
 )
+from ._phone import PhoneNumber, format_e164, is_valid, parse
 
 __version__ = "2.1.0"
 
@@ -69,11 +70,16 @@ __all__ = [
     "PatternRegistry",
     # Normalizers
     "PhoneNormalizer",
+    # Phone module
+    "PhoneNumber",
     # Exceptions
     "RolodexterError",
     "ServiceMatchStrategy",
     "ServiceNotFoundError",
     "StrategyError",
     "StringNormalizer",
+    "format_e164",
+    "is_valid",
     "normalize_value",
+    "parse",
 ]

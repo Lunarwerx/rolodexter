@@ -39,8 +39,7 @@ dependencies = []
 
 [project.optional-dependencies]
 fuzzy = ["rapidfuzz>=3.0"]
-phone = ["phonenumbers>=8.0"]
-all = ["rapidfuzz>=3.0", "phonenumbers>=8.0"]
+all = ["rapidfuzz>=3.0"]
 dev = [
     "rapidfuzz>=3.0",
     "pytest>=8.0",
