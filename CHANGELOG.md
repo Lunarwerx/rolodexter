@@ -7,39 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.6.5] — 2026-03-01
 
-### Changed
-
-- Repository migrated to `lunawerx/rolodexter` (correct account).
-- All documentation and PyPI links updated to `lunawerx`.
-
-## [2.6.4] — 2026-03-01
-
-### Changed
-
-- Repository migrated from `L0garithmic/rolodexter` to `LunarWerx/rolodexter`.
-- All documentation links updated to new org.
-
-## [2.6.3] — 2026-03-01
-
-### Changed
-
-- Logo width increased to 600px.
-- Display name updated to **RoloDexter** (capital D).
-
-## [2.6.2] — 2026-03-01
-
-### Changed
-
-- Added animated logo to README header.
-
-## [2.6.1] — 2026-03-01
-
-### Fixed
-
-- CI badge in README replaced with shields.io URL; direct `github.com` SVG embeds are blocked on the PyPI project description page.
-
-## [2.6.0] — 2026-03-01
-
 ### Added
 
 - **`ListNormalizer`** — tags and other list-adjacent fields now auto-normalise comma/semicolon-separated strings, JSON arrays, and Python lists to `list[str]`.
