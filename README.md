@@ -215,12 +215,12 @@ ContactMapper(
 
 **Methods:**
 
-| Method | Description |
-| --- | --- |
-| `identify(header, *, value)` | Resolve a single header to a `FieldMatch` |
-| `map_payload(payload, *, depth, extract_embedded_phones)` | Normalize an entire dict |
-| `map_batch(payloads, *, depth)` | Process a list of payloads |
-| `registry` | Access the underlying `PatternRegistry` |
+| Method                                                    | Description                               |
+| --------------------------------------------------------- | ----------------------------------------- |
+| `identify(header, *, value)`                              | Resolve a single header to a `FieldMatch` |
+| `map_payload(payload, *, depth, extract_embedded_phones)` | Normalize an entire dict                  |
+| `map_batch(payloads, *, depth)`                           | Process a list of payloads                |
+| `registry`                                                | Access the underlying `PatternRegistry`   |
 
 ### `FieldMatch`
 
@@ -236,17 +236,17 @@ FieldMatch(
 
 ### `MappingResult`
 
-| Attribute / Method | Type | Description |
-| --- | --- | --- |
-| `normalized` | `dict` | Canonical key → cleaned value |
-| `unmapped` | `dict` | Fields that couldn't be resolved |
-| `field_matches` | `tuple[FieldMatch, ...]` | Full match detail for every input field |
-| `match_rate` | `float` | Fraction of fields successfully matched |
-| `matched_count` | `int` | Count of matched fields |
-| `unmatched_count` | `int` | Count of unmatched fields |
-| `get_match(header)` | `FieldMatch \| None` | Look up the match for a specific input header |
-| `get_all_phones()` | `list[str]` | All phone values across all phone-adjacent fields |
-| `to_dict()` | `dict` | Full JSON-serializable report |
+| Attribute / Method  | Type                     | Description                                       |
+| ------------------- | ------------------------ | ------------------------------------------------- |
+| `normalized`        | `dict`                   | Canonical key → cleaned value                     |
+| `unmapped`          | `dict`                   | Fields that couldn't be resolved                  |
+| `field_matches`     | `tuple[FieldMatch, ...]` | Full match detail for every input field           |
+| `match_rate`        | `float`                  | Fraction of fields successfully matched           |
+| `matched_count`     | `int`                    | Count of matched fields                           |
+| `unmatched_count`   | `int`                    | Count of unmatched fields                         |
+| `get_match(header)` | `FieldMatch \| None`     | Look up the match for a specific input header     |
+| `get_all_phones()`  | `list[str]`              | All phone values across all phone-adjacent fields |
+| `to_dict()`         | `dict`                   | Full JSON-serializable report                     |
 
 ### `CanonicalField`
 
