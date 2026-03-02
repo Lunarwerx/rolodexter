@@ -6,7 +6,7 @@
 
 Route messy, inconsistent contact data from *any* source to a clean, canonical schema.
 
-[![CI](https://github.com/L0garithmic/rolodexter/actions/workflows/ci.yml/badge.svg)](https://github.com/L0garithmic/rolodexter/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/L0garithmic/rolodexter/ci.yml?label=CI)](https://github.com/L0garithmic/rolodexter/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/rolodexter)](https://pypi.org/project/rolodexter/)
 [![Python](https://img.shields.io/pypi/pyversions/rolodexter)](https://pypi.org/project/rolodexter/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
