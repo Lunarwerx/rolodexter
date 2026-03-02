@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rolodexter"
-version = "2.6.3"
+version = "2.6.4"
 description = "The universal contact field mapper — route messy, inconsistent contact data to a clean canonical schema."
 readme = "README.md"
 license = "MIT"
@@ -56,11 +56,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/L0garithmic/rolodexter"
-Repository = "https://github.com/L0garithmic/rolodexter"
-Documentation = "https://github.com/L0garithmic/rolodexter#readme"
-Issues = "https://github.com/L0garithmic/rolodexter/issues"
-Changelog = "https://github.com/L0garithmic/rolodexter/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/LunarWerx/rolodexter"
+Repository = "https://github.com/LunarWerx/rolodexter"
+Documentation = "https://github.com/LunarWerx/rolodexter#readme"
+Issues = "https://github.com/LunarWerx/rolodexter/issues"
+Changelog = "https://github.com/LunarWerx/rolodexter/blob/main/CHANGELOG.md"
 
 # ── Setuptools ────────────────────────────────────────────────────────
 

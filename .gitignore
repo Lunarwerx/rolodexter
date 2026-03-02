@@ -49,3 +49,4 @@ dmypy.json
 *.tmp
 .audit_tmp/
 .env
+logo/
