@@ -174,6 +174,33 @@ class MappingResult:
                 return m
         return None
 
+    def get_all_phones(self) -> list[str]:
+        """Return all phone values from ``normalized``, deduplicated.
+
+        Collects values from every phone-adjacent canonical field
+        (``phone``, ``home_phone``, ``work_phone``, ``fax``, ``whatsapp``)
+        and returns them in a single flat list with duplicates removed.
+
+        .. versionadded:: 2.6.0
+        """
+        phones: list[str] = []
+        for key in ("phone", "home_phone", "work_phone", "fax", "whatsapp"):
+            val = self.normalized.get(key)
+            if val is None:
+                continue
+            if isinstance(val, list):
+                phones.extend(str(v) for v in val)
+            else:
+                phones.append(str(val))
+        # Deduplicate preserving order
+        seen: set[str] = set()
+        result: list[str] = []
+        for p in phones:
+            if p not in seen:
+                seen.add(p)
+                result.append(p)
+        return result
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "normalized": dict(self.normalized),
@@ -360,6 +387,48 @@ class BooleanNormalizer:
         return value.strip()
 
 
+class ListNormalizer:
+    """Normalize list-like values to Python lists.
+
+    Handles JSON arrays (``'["a", "b"]'``), comma-separated strings
+    (``'marketing, sales'``), semicolon-separated strings, and
+    pre-existing Python lists.  Single bare strings become a
+    one-element list.
+
+    .. versionadded:: 2.6.0
+    """
+
+    @staticmethod
+    def normalize(value: Any) -> list[str] | Any:
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if str(v).strip()]
+        if not isinstance(value, str):
+            return value
+        text = value.strip()
+        if not text:
+            return value
+        # Try JSON array first
+        if text.startswith("["):
+            try:
+                parsed = json.loads(text)
+                if isinstance(parsed, list):
+                    return [str(v).strip() for v in parsed if str(v).strip()]
+            except (json.JSONDecodeError, ValueError):
+                pass
+        # Semicolon-separated
+        if ";" in text:
+            items = [s.strip() for s in text.split(";") if s.strip()]
+            if items:
+                return items
+        # Comma-separated
+        if "," in text:
+            items = [s.strip() for s in text.split(",") if s.strip()]
+            if items:
+                return items
+        # Single value → single-element list
+        return [text]
+
+
 # Category sets — each canonical field belongs to exactly one normalizer group.
 # Adding a new CanonicalField? Just add it to the right set below.
 _PHONE_FIELDS: frozenset[str] = frozenset({"phone", "home_phone", "work_phone", "fax", "whatsapp"})
@@ -368,6 +437,7 @@ _NAME_FIELDS: frozenset[str] = frozenset(
 )
 _ADDRESS_FIELDS: frozenset[str] = frozenset({"address_line1", "address_line2", "city", "full_address"})
 _BOOLEAN_FIELDS: frozenset[str] = frozenset({"email_opt_out", "subscribed", "verified"})
+_LIST_FIELDS: frozenset[str] = frozenset({"tags"})
 _SOCIAL_FIELDS: frozenset[str] = frozenset(
     {"website", "linkedin", "twitter", "facebook", "instagram", "github", "youtube", "tiktok", "discord", "telegram"}
 )
@@ -378,6 +448,7 @@ _FIELD_NORMALIZERS: dict[str, type] = {
     **{f: NameNormalizer for f in _NAME_FIELDS},
     **{f: AddressNormalizer for f in _ADDRESS_FIELDS},
     **{f: BooleanNormalizer for f in _BOOLEAN_FIELDS},
+    **{f: ListNormalizer for f in _LIST_FIELDS},
     **{f: StringNormalizer for f in _SOCIAL_FIELDS},
     "email": EmailNormalizer,
     "postal_code": PostalCodeNormalizer,
@@ -427,6 +498,7 @@ class PatternRegistry:
         patterns: dict[str, Any] | None = None,
         patterns_path: str | None = None,
         languages: str | Sequence[str] | None = None,
+        overrides: dict[str, str] | None = None,
     ) -> None:
         if patterns is not None:
             self._data = patterns
@@ -441,6 +513,9 @@ class PatternRegistry:
         self._canonical_fields: list[str] = []
         self._loaded_languages: list[str] = []
         self._build_indexes()
+
+        # ── Caller overrides (after base indexes) ─────────────────
+        self._apply_overrides(overrides)
 
     @staticmethod
     def _load_from_path(path: str) -> dict[str, Any]:
@@ -505,6 +580,31 @@ class PatternRegistry:
                     if key not in self._reverse_index:
                         self._reverse_index[key] = canonical
                     self._all_aliases.append(key)
+
+    def _apply_overrides(self, overrides: dict[str, str] | None) -> None:
+        """Apply caller-supplied alias overrides with highest priority.
+
+        Use this for vendor-specific field names that rolodexter can't
+        know generically (e.g. Mailchimp per-account MMERGE fields)::
+
+            registry = PatternRegistry(overrides={
+                "MMERGE3": "full_address",
+                "MMERGE6": "company",
+            })
+
+        Override entries **replace** any existing mapping for the same
+        alias, so callers can correct or extend the alias index at
+        construction time.
+
+        .. versionadded:: 2.6.0
+        """
+        if not overrides:
+            return
+        for alias, canonical in overrides.items():
+            key = alias.lower().strip()
+            self._reverse_index[key] = canonical  # highest priority
+            if key not in self._all_aliases:
+                self._all_aliases.append(key)
 
     def _apply_expansion_rules(self) -> None:
         """Expand compact ``expansion`` rules in patterns.json into aliases.
@@ -919,6 +1019,10 @@ class ContactMapper:
     .. versionchanged:: 2.0.0
         Per-service profiles removed.  The ``default_service`` and
         ``service`` parameters are accepted but ignored.
+
+    .. versionchanged:: 2.6.0
+        Added *overrides* parameter for caller-supplied alias mappings
+        (e.g. vendor-specific merge fields).
     """
 
     __slots__ = ("_normalize", "_registry", "_strategies")
@@ -932,8 +1036,14 @@ class ContactMapper:
         normalize: bool = True,
         strategies: Sequence[MatchStrategy] | None = None,
         languages: str | Sequence[str] | None = None,
+        overrides: dict[str, str] | None = None,
     ) -> None:
-        self._registry = PatternRegistry(patterns=patterns, patterns_path=patterns_path, languages=languages)
+        self._registry = PatternRegistry(
+            patterns=patterns,
+            patterns_path=patterns_path,
+            languages=languages,
+            overrides=overrides,
+        )
         self._normalize = normalize
 
         if strategies is not None:
@@ -964,6 +1074,7 @@ class ContactMapper:
         *,
         service: str | None = None,
         depth: int = 1,
+        extract_embedded_phones: bool = False,
     ) -> MappingResult:
         """Normalize an entire contact data dictionary.
 
@@ -977,6 +1088,13 @@ class ContactMapper:
             Recursion depth for nested payloads.  ``1`` (default) processes
             only the top-level keys.  ``2`` also recurses one level into
             nested dicts.  Maximum supported value is ``5``.
+        extract_embedded_phones : bool, default False
+            When ``True``, scan all non-phone string values for embedded
+            phone numbers (e.g. ``"reach me at +1-555-123-4567"``) using
+            :class:`PhoneNumberMatcher` and merge any found numbers into
+            the ``phone`` field of the result.
+
+            .. versionadded:: 2.6.0
 
         Returns
         -------
@@ -1000,7 +1118,48 @@ class ContactMapper:
             else:
                 unmapped[key] = value
 
+        # ── Embedded phone extraction (opt-in) ─────────────────────
+        if extract_embedded_phones:
+            self._extract_embedded_phones(normalized, unmapped, matches)
+
         return MappingResult(normalized=normalized, unmapped=unmapped, field_matches=tuple(matches))
+
+    @staticmethod
+    def _extract_embedded_phones(
+        normalized: dict[str, Any],
+        unmapped: dict[str, Any],
+        matches: list[FieldMatch],
+    ) -> None:
+        """Scan non-phone string values for embedded phone numbers.
+
+        Found numbers are merged into ``normalized["phone"]`` and
+        recorded in *matches* with ``strategy="embedded_phone"``.
+
+        .. versionadded:: 2.6.0
+        """
+        from . import _phone
+
+        # Collect all string values from unmapped + non-phone normalized fields
+        candidates: list[tuple[str, str]] = []
+        for key, val in unmapped.items():
+            if isinstance(val, str) and len(val) > 6:
+                candidates.append((key, val))
+        for key, val in normalized.items():
+            if key not in _PHONE_FIELDS and isinstance(val, str) and len(val) > 6:
+                candidates.append((key, val))
+
+        for key, text in candidates:
+            for pm in _phone.PhoneNumberMatcher(text):
+                e164 = pm.number.e164
+                _merge(normalized, "phone", e164)
+                matches.append(
+                    FieldMatch(
+                        original=key,
+                        canonical="phone",
+                        confidence=HEURISTIC_CONFIDENCE,
+                        strategy="embedded_phone",
+                    )
+                )
 
     @staticmethod
     def _flatten(
@@ -1011,8 +1170,10 @@ class ContactMapper:
     ) -> dict[str, Any]:
         """Recursively flatten nested dicts up to *depth* levels.
 
-        Nested keys are joined with ``_``.  Non-dict values and dicts
-        beyond the depth limit are preserved as-is.
+        Nested keys are joined with ``.`` (dot).  Non-dict values and
+        dicts beyond the depth limit are preserved as-is.  The dot
+        separator is consumed by :class:`NormalizedMatchStrategy`'s
+        dot-path resolution.
         """
         result: dict[str, Any] = {}
         for key, value in payload.items():
