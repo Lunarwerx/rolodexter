@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Logo width increased to 600px.
+- Display name updated to **RoloDexter** (capital D).
 
 ## [2.6.2] — 2026-03-01
 

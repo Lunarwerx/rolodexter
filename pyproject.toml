@@ -9,7 +9,7 @@ description = "The universal contact field mapper — route messy, inconsistent 
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [{ name = "Rolodexter Contributors" }]
+authors = [{ name = "RoloDexter Contributors" }]
 keywords = [
     "contact",
     "mapper",

@@ -1,4 +1,4 @@
-"""Rolodexter — The universal contact field mapper.
+"""RoloDexter — The universal contact field mapper.
 
 Map messy, inconsistent contact data from any source to a clean,
 canonical schema.  Supports fuzzy matching, smart normalisation,
