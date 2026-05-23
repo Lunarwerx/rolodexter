@@ -5,6 +5,28 @@ All notable changes to **rolodexter** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.6] — 2026-05-23
+
+### Fixed
+
+- **`_merge()` deduplication** — when multiple aliases on a payload (e.g. `phone` and `mobile`) carry the same normalized value, the result no longer contains duplicate list entries.
+- **`PatternRegistry._all_aliases` deduplication** — aliases that appeared in both the `fields` table and expansion rules (e.g. `"first"`), or across English + i18n layers, are no longer counted multiple times.  Cuts the fuzzy-match scan list to unique entries.
+- **`HeuristicMatchStrategy` phone false-positives** — bare-digit strings that match the loose phone regex are now confirmed against libphonenumber's `is_possible_number`, so 10-digit numeric IDs are no longer misclassified as phones.
+- **`NameNormalizer._ensure_prefixes` thread-safety** — the one-time `nameparser` prefix patch is now guarded by a double-checked lock.  The i18n CLI's worker pool could previously race on first use.
+- **`_phone._wrap()` italian leading zero** — reads `national_number` directly while preserving `italian_leading_zero` (e.g. Italian numbers).
+- **i18n `_translate_batch`** logs warnings on batch + per-phrase failures instead of swallowing them silently.
+- **i18n `generate_language`** no longer writes an empty cache file when zero translations succeed and no prior cache exists — the next invocation can retry instead of short-circuiting.
+- **i18n `_package_i18n_dir`** probe uses `unlink(missing_ok=True)` to survive transient races (AV scanners, parallel probes).
+
+### Performance
+
+- **`FuzzyMatchStrategy`** caches the length-filtered alias list across calls instead of rebuilding it per header.  Invalidates only when the alias set grows.
+- **`NormalizedMatchStrategy` / `FuzzyMatchStrategy`** use module-level compiled regexes instead of recompiling per call.
+
+### Removed
+
+- 11 redundant aliases from `patterns.json` that the expansion engine already generates (`primary_email`, `personal_email`, `primary_phone`, `secondary_phone`, `personal_phone`, `business_fax`, `mailing_city`, `mailing_state`, `mailing_zip`, `mailing_country`, `personal_website`).  Total aliases: 615 → 604; no behavior change.
+
 ## [2.6.5] — 2026-03-01
 
 ### Added
