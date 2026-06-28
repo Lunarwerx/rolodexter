@@ -5,6 +5,48 @@ All notable changes to **rolodexter** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] — 2026-06-28
+
+Patch release candidate: correctness fixes, safer CLI/i18n behavior, and CI
+compatibility with current dependency/tooling resolutions.
+
+### Fixed
+
+- **List-valued fields now normalize consistently.** Python list values for
+  `tags` now route through `ListNormalizer`, trimming and filtering empty
+  entries instead of bypassing field-specific normalization.
+- **Duplicate list-valued aliases now merge flat and dedupe.** Multiple `tags`
+  aliases no longer produce nested lists on collision.
+- **`map_batch()` now supports embedded-phone extraction parity.** The
+  `extract_embedded_phones` option is accepted and forwarded to `map_stream()`.
+- **`compile_schema()` and `map_dataframe()` now honor confidence thresholds
+  and strict mode.** Low-confidence schema/DataFrame matches are dropped the
+  same way `map_payload()` drops them, and strict mode raises on warnings.
+- **Confidence thresholds are validated.** Constructor and per-call thresholds
+  now reject values outside `0.0` to `1.0`.
+- **CLI file output is atomic.** `rolodexter map -o OUT` writes to a
+  same-directory temp file and replaces the target only after a successful map,
+  avoiding partial or truncated outputs on strict/fault failures.
+- **i18n cache reads are read-only.** Cache discovery and loading no longer
+  create package/user cache directories or `.probe` files; cache writes use
+  temp-file replacement.
+- **`PatternRegistry.all_aliases` no longer exposes mutable internals.** It
+  keeps returning a `list[str]` for compatibility, but now returns a copy.
+- **CI type checking no longer depends on line-level ignores for `nameparser`.**
+  The untyped dependency is handled through mypy configuration so newer mypy
+  releases do not fail on unused ignore comments.
+
+### Changed
+
+- README i18n wording now reflects the current cache-only runtime behavior:
+  language aliases must be generated ahead of mapper construction.
+
+### Testing
+
+- Added focused regressions for list normalization, schema/DataFrame threshold
+  handling, atomic CLI output, read-only i18n cache discovery, and alias-list
+  immutability.
+
 ## [2.8.0] — 2026-05-28
 
 Forward-looking feature release: observability, a CLI, DataFrame + streaming

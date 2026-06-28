@@ -158,6 +158,25 @@ FUZZY_LENGTH_RATIO: float = 0.5
 HEURISTIC_CONFIDENCE: float = 0.60
 
 
+def _validate_confidence_threshold(value: float) -> float:
+    """Return *value* as a float if it is inside the public confidence range."""
+    threshold = float(value)
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("confidence_threshold must be between 0.0 and 1.0")
+    return threshold
+
+
+def _value_for_matching(value: Any) -> str | None:
+    """Convert only scalar values for value-shape matching."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool | int | float):
+        return str(value)
+    return None
+
+
 # ═══════════════════════════════════════════════════════════════════════
 #  MODELS
 # ═══════════════════════════════════════════════════════════════════════
@@ -383,7 +402,7 @@ class NameNormalizer:
         with cls._prefix_lock:
             if cls._prefixes_patched:
                 return
-            from nameparser.config import CONSTANTS  # type: ignore[import-untyped]
+            from nameparser.config import CONSTANTS
 
             CONSTANTS.prefixes.add(*cls._EXTRA_PREFIXES)
             cls._prefixes_patched = True
@@ -398,7 +417,7 @@ class NameNormalizer:
             return value
 
         cls._ensure_prefixes()
-        from nameparser import HumanName  # type: ignore[import-untyped]
+        from nameparser import HumanName
 
         hn = HumanName(text.lower())
         hn.capitalize()
@@ -637,8 +656,6 @@ def normalize_value(
     .. versionchanged:: 2.7.0
        Honours *default_region* for phone fields.
     """
-    if not isinstance(value, str):
-        return value
     cls = _FIELD_NORMALIZERS.get(canonical_field, StringNormalizer)
     if cls is PhoneNormalizer:
         return cls.normalize(value, default_region=default_region)
@@ -845,7 +862,7 @@ class PatternRegistry:
 
     @property
     def all_aliases(self) -> list[str]:
-        return self._all_aliases
+        return list(self._all_aliases)
 
     @property
     def canonical_fields(self) -> list[str]:
@@ -1418,7 +1435,9 @@ class ContactMapper:
         self._normalize = normalize
         self._default_region = default_region
         self._strict = strict
-        self._confidence_threshold = confidence_threshold
+        self._confidence_threshold = _validate_confidence_threshold(
+            confidence_threshold
+        )
         self._default_service = (
             default_service  # accepted for backward compat; not used since v2.0
         )
@@ -1485,9 +1504,7 @@ class ContactMapper:
                 return result
         return self._unknown(header)
 
-    def _resolve(
-        self, header: str, value: str | None, region: str | None
-    ) -> FieldMatch:
+    def _resolve(self, header: str, value: Any, region: str | None) -> FieldMatch:
         """Resolve a header, caching the deterministic header-only verdict.
 
         For a cache-friendly pipeline, header-only strategies (exact /
@@ -1496,7 +1513,9 @@ class ContactMapper:
         makes :meth:`map_batch` scale to large, repetitive exports.
         """
         if not self._cacheable_pipeline:
-            return self.identify(header, value=value, default_region=region)
+            return self.identify(
+                header, value=_value_for_matching(value), default_region=region
+            )
 
         if header in self._header_cache:
             verdict = self._header_cache[header]
@@ -1516,8 +1535,9 @@ class ContactMapper:
 
         # Header-only strategies missed — the value-dependent ones may still
         # match, and their result can differ per row, so never cache them.
+        match_value = _value_for_matching(value)
         for strategy in self._value_strategies:
-            result = strategy.match(header, value=value, default_region=region)
+            result = strategy.match(header, value=match_value, default_region=region)
             if result is not None:
                 return result
         return self._unknown(header)
@@ -1585,6 +1605,7 @@ class ContactMapper:
             if confidence_threshold is not None
             else self._confidence_threshold
         )
+        threshold = _validate_confidence_threshold(threshold)
         is_strict = self._strict if strict is None else strict
 
         normalized: dict[str, Any] = {}
@@ -1593,8 +1614,7 @@ class ContactMapper:
         warnings: list[str] = []
 
         for key, value in flat.items():
-            str_val = str(value) if value is not None else None
-            match = self._resolve(key, str_val, region)
+            match = self._resolve(key, value, region)
 
             # Drop matches below the confidence floor (recorded, not silent).
             if match.is_matched and match.confidence < threshold:
@@ -1717,6 +1737,7 @@ class ContactMapper:
         service: str | None = None,
         depth: int = 1,
         default_region: str | None = None,
+        extract_embedded_phones: bool = False,
         strict: bool | None = None,
         confidence_threshold: float | None = None,
     ) -> list[MappingResult]:
@@ -1734,6 +1755,7 @@ class ContactMapper:
                 payloads,
                 depth=depth,
                 default_region=default_region,
+                extract_embedded_phones=extract_embedded_phones,
                 strict=strict,
                 confidence_threshold=confidence_threshold,
             )
@@ -1779,6 +1801,8 @@ class ContactMapper:
         headers: Iterable[str],
         *,
         default_region: str | None = None,
+        strict: bool | None = None,
+        confidence_threshold: float | None = None,
     ) -> MappingSchema:
         """Resolve a fixed set of headers once into a reusable mapping plan.
 
@@ -1793,15 +1817,35 @@ class ContactMapper:
         .. versionadded:: 2.8.0
         """
         region = default_region if default_region is not None else self._default_region
+        threshold = (
+            confidence_threshold
+            if confidence_threshold is not None
+            else self._confidence_threshold
+        )
+        threshold = _validate_confidence_threshold(threshold)
+        is_strict = self._strict if strict is None else strict
         matches: dict[str, FieldMatch] = {}
+        warnings: list[str] = []
         for header in headers:
             key = str(header)
             if self._cacheable_pipeline:
                 # value=None → only header-only strategies fire; also warms the
                 # mapper's _header_cache for subsequent row mapping.
-                matches[key] = self._resolve(key, None, region)
+                match = self._resolve(key, None, region)
             else:
-                matches[key] = self.identify(key, default_region=region)
+                match = self.identify(key, default_region=region)
+            if match.is_matched and match.confidence < threshold:
+                warnings.append(
+                    f"{key!r}: dropped low-confidence match to {match.canonical!r} "
+                    f"(confidence {match.confidence:.2f} < threshold {threshold:.2f})"
+                )
+                match = self._unknown(key)
+            matches[key] = match
+        if warnings:
+            for warning in warnings:
+                logger.warning("%s", warning)
+            if is_strict:
+                raise NormalizationError("; ".join(warnings))
         return MappingSchema(matches=matches, mapper=self, default_region=region)
 
     def map_dataframe(
@@ -1810,6 +1854,8 @@ class ContactMapper:
         *,
         default_region: str | None = None,
         normalize: bool | None = None,
+        strict: bool | None = None,
+        confidence_threshold: float | None = None,
     ) -> pd.DataFrame:
         """Return a copy of *df* with columns renamed to canonical fields.
 
@@ -1834,8 +1880,18 @@ class ContactMapper:
 
         region = default_region if default_region is not None else self._default_region
         do_norm = self._normalize if normalize is None else normalize
+        is_strict = self._strict if strict is None else strict
+        threshold = (
+            confidence_threshold
+            if confidence_threshold is not None
+            else self._confidence_threshold
+        )
+        threshold = _validate_confidence_threshold(threshold)
         schema = self.compile_schema(
-            [str(c) for c in df.columns], default_region=region
+            [str(c) for c in df.columns],
+            default_region=region,
+            strict=is_strict,
+            confidence_threshold=threshold,
         )
 
         rename: dict[Any, str] = {}
@@ -1861,12 +1917,29 @@ class ContactMapper:
             rename[col] = new_name
 
         out = df.rename(columns=rename)
+        warnings: list[str] = []
         if do_norm:
-            for new_name in rename.values():
+            for old_name, new_name in rename.items():
                 canonical = new_name.split("__", 1)[0]
                 out[new_name] = out[new_name].map(
                     lambda v, c=canonical: normalize_value(c, v, default_region=region)
                 )
+                if canonical in _PHONE_FIELDS:
+                    for final in out[new_name]:
+                        if (
+                            isinstance(final, str)
+                            and final.strip()
+                            and not final.startswith("+")
+                        ):
+                            warnings.append(
+                                f"{old_name!r}: phone value {final!r} could not be "
+                                "normalized to E.164 (set a matching default_region?)"
+                            )
+        if warnings:
+            for warning in warnings:
+                logger.warning("%s", warning)
+            if is_strict:
+                raise NormalizationError("; ".join(warnings))
         return out
 
     @property
@@ -1921,6 +1994,19 @@ def _merge(target: dict[str, Any], key: str, value: Any) -> None:
     from multiple aliases (e.g. ``phone`` + ``mobile`` carrying the
     same number) appears only once.
     """
+    if key in _LIST_FIELDS:
+        if key not in target:
+            target[key] = list(value) if isinstance(value, list) else value
+            return
+        incoming = value if isinstance(value, list) else [value]
+        existing = target[key] if isinstance(target[key], list) else [target[key]]
+        merged = list(existing)
+        for item in incoming:
+            if item not in merged:
+                merged.append(item)
+        target[key] = merged
+        return
+
     if key not in target:
         target[key] = value
         return

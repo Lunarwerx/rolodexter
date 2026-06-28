@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rolodexter"
-version = "2.8.0"
+version = "2.8.1"
 description = "The universal contact field mapper — route messy, inconsistent contact data to a clean canonical schema."
 readme = "README.md"
 license = "MIT"
@@ -139,4 +139,11 @@ warn_unused_configs = true
 # pandas is an optional, lazily-imported extra and ships no type stubs by default.
 [[tool.mypy.overrides]]
 module = ["pandas.*"]
+ignore_missing_imports = true
+
+# nameparser currently ships no type stubs/py.typed marker in some resolver
+# environments. Keep this as a config-level override instead of line-level
+# ignores so newer mypy releases do not fail on unused ignore comments.
+[[tool.mypy.overrides]]
+module = ["nameparser.*"]
 ignore_missing_imports = true

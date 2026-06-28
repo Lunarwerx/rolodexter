@@ -134,12 +134,12 @@ print(result.normalized["tags"])
 
 ### 🌍 On-Demand i18n (40 Languages)
 
-English ships by default. Request any of 40 supported languages and aliases are generated on the fly via Google Translate, then cached so translation only happens once:
+English ships by default. Generate any of 40 supported language caches with the i18n CLI or API, then pass those languages to `ContactMapper`; runtime loading is cache-only and never translates during mapper construction:
 
 ```python
 from rolodexter import ContactMapper
 
-# Load Spanish aliases on demand
+# Load Spanish aliases from a generated cache
 mapper = ContactMapper(languages=["es"])
 result = mapper.map_payload({"correo_electronico": "juan@example.com"})
 print(result.normalized["email"])  # juan@example.com

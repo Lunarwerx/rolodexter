@@ -68,6 +68,14 @@ class TestStrictMode:
 
 
 class TestConfidenceThreshold:
+    def test_constructor_threshold_rejects_out_of_range(self) -> None:
+        with pytest.raises(ValueError, match="confidence_threshold"):
+            ContactMapper(confidence_threshold=1.1)
+
+    def test_per_call_threshold_rejects_out_of_range(self) -> None:
+        with pytest.raises(ValueError, match="confidence_threshold"):
+            ContactMapper().map_payload({"fname": "Jane"}, confidence_threshold=-0.1)
+
     def test_threshold_drops_heuristic_match(self) -> None:
         result = ContactMapper().map_payload(
             {"Mystery Column": "jane@example.com"}, confidence_threshold=0.8
@@ -135,6 +143,13 @@ class TestMapStream:
         stream = list(mapper.map_stream(rows))
         assert [r.normalized for r in batch] == [r.normalized for r in stream]
 
+    def test_map_batch_forwards_embedded_phone_extraction(self) -> None:
+        mapper = ContactMapper()
+        rows = [{"notes": "call +1-650-253-0000"}]
+        batch = mapper.map_batch(rows, extract_embedded_phones=True)
+        stream = list(mapper.map_stream(rows, extract_embedded_phones=True))
+        assert batch[0].normalized["phone"] == stream[0].normalized["phone"]
+
 
 class TestCompileSchema:
     def test_column_map(self) -> None:
@@ -157,6 +172,17 @@ class TestCompileSchema:
         result = schema.apply({"First Name": "Jane", "Mobile Phone": "(202) 555-0143"})
         assert result.normalized["first_name"] == "Jane"
         assert result.normalized["phone"] == "+12025550143"
+
+    def test_threshold_drops_low_confidence_schema_match(self) -> None:
+        schema = ContactMapper(confidence_threshold=0.99).compile_schema(["Compny"])
+        assert schema.column_map() == {}
+        assert schema.unmatched_headers() == ["Compny"]
+
+    def test_strict_threshold_raises_for_schema_match(self) -> None:
+        with pytest.raises(NormalizationError):
+            ContactMapper(strict=True, confidence_threshold=0.99).compile_schema(
+                ["Compny"]
+            )
 
 
 # ── pandas adapter ──────────────────────────────────────────────────────
@@ -185,6 +211,24 @@ class TestMapDataframe:
         cols = list(out.columns)
         assert "phone" in cols
         assert any(c.startswith("phone__") for c in cols)
+
+    def test_confidence_threshold_preserves_low_confidence_columns(self) -> None:
+        pd = pytest.importorskip("pandas")
+        df = pd.DataFrame({"Compny": ["Acme"]})
+        out = ContactMapper(confidence_threshold=0.99).map_dataframe(df)
+        assert list(out.columns) == ["Compny"]
+
+    def test_strict_phone_normalization_raises(self) -> None:
+        pd = pytest.importorskip("pandas")
+        df = pd.DataFrame({"phone": ["garbage value here"]})
+        with pytest.raises(NormalizationError):
+            ContactMapper(strict=True).map_dataframe(df)
+
+    def test_strict_confidence_threshold_raises(self) -> None:
+        pd = pytest.importorskip("pandas")
+        df = pd.DataFrame({"Compny": ["Acme"]})
+        with pytest.raises(NormalizationError):
+            ContactMapper(strict=True, confidence_threshold=0.99).map_dataframe(df)
 
 
 # ── Heuristic input cap (defensive) ─────────────────────────────────────
@@ -280,6 +324,39 @@ class TestCLI:
         err = capsys.readouterr().err
         assert rc == 1
         assert "error" in err.lower()
+
+    def test_map_file_failure_does_not_leave_partial_jsonl(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        csv_path = tmp_path / "in.csv"
+        csv_path.write_text(
+            "phone\n(202) 555-0143\ngarbage value here\n",
+            encoding="utf-8",
+        )
+        out_path = tmp_path / "out.jsonl"
+
+        rc = cli_main(["map", str(csv_path), "-o", str(out_path), "--strict"])
+        err = capsys.readouterr().err
+
+        assert rc == 1
+        assert "error" in err.lower()
+        assert not out_path.exists()
+
+    def test_map_file_failure_preserves_existing_output(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        csv_path = tmp_path / "in.csv"
+        csv_path.write_text("phone\ngarbage value here\n", encoding="utf-8")
+        out_path = tmp_path / "out.json"
+        original = '[{"first_name": "Existing"}]\n'
+        out_path.write_text(original, encoding="utf-8")
+
+        rc = cli_main(["map", str(csv_path), "-o", str(out_path), "--strict"])
+        err = capsys.readouterr().err
+
+        assert rc == 1
+        assert "error" in err.lower()
+        assert out_path.read_text("utf-8") == original
 
     def test_map_json_input_to_csv_scalarizes_lists(self, tmp_path: Path) -> None:
         # JSON array input -> CSV output; the tags list must collapse to one cell.

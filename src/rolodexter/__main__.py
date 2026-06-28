@@ -24,8 +24,11 @@ import argparse
 import contextlib
 import csv
 import json
+import os
 import sys
+import tempfile
 from collections.abc import Iterable, Iterator
+from pathlib import Path
 from typing import IO, Any
 
 from .core import CanonicalField, ContactMapper, MappingResult, RolodexterError
@@ -115,6 +118,31 @@ def _parse_languages(raw: str | None) -> list[str] | None:
     return [code.strip() for code in raw.split(",") if code.strip()]
 
 
+@contextlib.contextmanager
+def _atomic_output(path: str) -> Iterator[IO[str]]:
+    """Write to a same-directory temp file, then replace *path* on success."""
+    target = Path(path)
+    temp_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            newline="",
+            encoding="utf-8",
+            dir=target.parent,
+            prefix=f".{target.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as fh:
+            temp_name = fh.name
+            yield fh
+        os.replace(temp_name, target)
+        temp_name = None
+    finally:
+        if temp_name is not None:
+            with contextlib.suppress(OSError):
+                os.unlink(temp_name)
+
+
 # ── Commands ───────────────────────────────────────────────────────────
 
 
@@ -139,7 +167,7 @@ def _cmd_map(args: argparse.Namespace) -> int:
 
     with contextlib.ExitStack() as stack:
         out: IO[str] = (
-            stack.enter_context(open(args.output, "w", newline="", encoding="utf-8"))
+            stack.enter_context(_atomic_output(args.output))
             if args.output
             else sys.stdout
         )
