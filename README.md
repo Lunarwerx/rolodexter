@@ -71,6 +71,15 @@ pip install rolodexter[all]
 pip install rolodexter[dev]
 ```
 
+JavaScript/TypeScript package source now lives in `packages/js` and is prepared
+for a first NPM release. Until that package is published, build it locally with:
+
+```bash
+cd packages/js
+npm install
+npm test
+```
+
 ## Features
 
 ### 🎯 Four-Layer Matching Pipeline

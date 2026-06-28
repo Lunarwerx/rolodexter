@@ -1,0 +1,55 @@
+{
+  "name": "rolodexter",
+  "version": "0.1.0",
+  "description": "Universal contact field mapper for JavaScript and TypeScript.",
+  "type": "module",
+  "license": "MIT",
+  "author": "RoloDexter Contributors",
+  "keywords": [
+    "contact",
+    "mapper",
+    "normalizer",
+    "etl",
+    "crm",
+    "field-mapping",
+    "data-cleaning"
+  ],
+  "homepage": "https://github.com/lunawerx/rolodexter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lunawerx/rolodexter.git",
+    "directory": "packages/js"
+  },
+  "bugs": {
+    "url": "https://github.com/lunawerx/rolodexter/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist/src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "sync:patterns": "node scripts/sync-patterns.mjs",
+    "build": "npm run sync:patterns && tsc -p tsconfig.json && node scripts/copy-assets.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test \"dist/test/**/*.js\"",
+    "prepack": "npm test"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.13.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "typescript": "^6.0.3"
+  }
+}

@@ -153,6 +153,9 @@ FUZZY_LOW_CONFIDENCE: float = 0.70
 # longer before accepting the match.
 FUZZY_LENGTH_RATIO: float = 0.5
 HEURISTIC_CONFIDENCE: float = 0.60
+EMBEDDED_PHONE_MAX_TEXT_CHARS: int = 8192
+EMBEDDED_PHONE_MAX_MATCHES_PER_FIELD: int = 5
+EMBEDDED_PHONE_MAX_MATCHES_PER_PAYLOAD: int = 20
 
 
 def _validate_confidence_threshold(value: float) -> float:
@@ -1648,7 +1651,9 @@ class ContactMapper:
 
         # ── Embedded phone extraction (opt-in) ─────────────────────
         if extract_embedded_phones:
-            self._extract_embedded_phones(normalized, unmapped, matches, region)
+            self._extract_embedded_phones(
+                normalized, unmapped, matches, warnings, region
+            )
 
         if warnings:
             for w in warnings:
@@ -1668,29 +1673,66 @@ class ContactMapper:
         normalized: dict[str, Any],
         unmapped: dict[str, Any],
         matches: list[FieldMatch],
+        warnings: list[str],
         default_region: str | None = None,
     ) -> None:
         """Scan non-phone string values for embedded phone numbers.
 
         Found numbers are merged into ``normalized["phone"]`` and
-        recorded in *matches* with ``strategy="embedded_phone"``.
+        recorded in *matches* with ``strategy="embedded_phone"``.  Scans are
+        bounded by text length and match-count caps so an overlong notes field
+        cannot monopolize CPU/memory; any truncation is reported in *warnings*.
 
         .. versionadded:: 2.6.0
         .. versionchanged:: 2.7.0 Honours *default_region*.
         """
         from . import _phone
 
-        # Collect all string values from unmapped + non-phone normalized fields
-        candidates: list[tuple[str, str]] = []
-        for key, val in unmapped.items():
-            if isinstance(val, str) and len(val) > 6:
-                candidates.append((key, val))
-        for key, val in normalized.items():
-            if key not in _PHONE_FIELDS and isinstance(val, str) and len(val) > 6:
-                candidates.append((key, val))
+        def candidates() -> Iterator[tuple[str, str]]:
+            for key, val in unmapped.items():
+                if isinstance(val, str) and len(val) > 6:
+                    yield key, val
+            for key, val in tuple(normalized.items()):
+                if key not in _PHONE_FIELDS and isinstance(val, str) and len(val) > 6:
+                    yield key, val
 
-        for key, text in candidates:
-            for pm in _phone.PhoneNumberMatcher(text, default_region=default_region):
+        found_total = 0
+        warned_payload_limit = False
+        for key, text in candidates():
+            if found_total >= EMBEDDED_PHONE_MAX_MATCHES_PER_PAYLOAD:
+                if not warned_payload_limit:
+                    warnings.append(
+                        "embedded phone extraction stopped after "
+                        f"{EMBEDDED_PHONE_MAX_MATCHES_PER_PAYLOAD} matches "
+                        "for this payload"
+                    )
+                    warned_payload_limit = True
+                break
+
+            scan_text = text
+            if len(scan_text) > EMBEDDED_PHONE_MAX_TEXT_CHARS:
+                warnings.append(
+                    f"{key!r}: embedded phone scan truncated at "
+                    f"{EMBEDDED_PHONE_MAX_TEXT_CHARS} characters"
+                )
+                scan_text = scan_text[:EMBEDDED_PHONE_MAX_TEXT_CHARS]
+
+            remaining_payload = EMBEDDED_PHONE_MAX_MATCHES_PER_PAYLOAD - found_total
+            field_limit = min(
+                EMBEDDED_PHONE_MAX_MATCHES_PER_FIELD,
+                remaining_payload,
+            )
+            overflow_for_field = False
+            for found_for_field, pm in enumerate(
+                _phone.PhoneNumberMatcher(
+                    scan_text,
+                    default_region=default_region,
+                    max_matches=field_limit + 1,
+                )
+            ):
+                if found_for_field >= field_limit:
+                    overflow_for_field = True
+                    break
                 e164 = pm.number.e164
                 _merge(normalized, "phone", e164)
                 matches.append(
@@ -1701,6 +1743,25 @@ class ContactMapper:
                         strategy="embedded_phone",
                     )
                 )
+                found_total += 1
+
+            if overflow_for_field:
+                if field_limit == EMBEDDED_PHONE_MAX_MATCHES_PER_FIELD:
+                    warnings.append(
+                        f"{key!r}: embedded phone extraction stopped after "
+                        f"{EMBEDDED_PHONE_MAX_MATCHES_PER_FIELD} matches "
+                        "for this field"
+                    )
+                if (
+                    found_total >= EMBEDDED_PHONE_MAX_MATCHES_PER_PAYLOAD
+                    and not warned_payload_limit
+                ):
+                    warnings.append(
+                        "embedded phone extraction stopped after "
+                        f"{EMBEDDED_PHONE_MAX_MATCHES_PER_PAYLOAD} matches "
+                        "for this payload"
+                    )
+                    warned_payload_limit = True
 
     @staticmethod
     def _flatten(

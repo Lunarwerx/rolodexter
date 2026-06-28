@@ -2551,6 +2551,12 @@ class TestPhoneNumberMatcher:
         matcher = PhoneNumberMatcher("No phones here")
         assert matcher.has_next() is False
 
+    def test_max_matches_caps_cached_results(self) -> None:
+        text = "One +1 202 555 1234 two +1 650 253 0000"
+        matcher = PhoneNumberMatcher(text, max_matches=1)
+        assert len(matcher) == 1
+        assert len(list(matcher)) == 1
+
 
 # ═══════════════════════════════════════════════════════════════
 #  v2.1 — RECURSIVE / NESTED PAYLOAD SUPPORT
@@ -4451,6 +4457,44 @@ class TestEmbeddedPhoneExtraction:
         )
         strategies = [m.strategy for m in result.field_matches]
         assert "embedded_phone" in strategies
+
+    def test_long_embedded_phone_text_is_truncated_with_warning(self) -> None:
+        mapper = ContactMapper()
+        long_notes = "x" * 9000 + " call +1-650-253-0000"
+        result = mapper.map_payload(
+            {"notes": long_notes},
+            extract_embedded_phones=True,
+        )
+        assert "phone" not in result.normalized
+        assert any("truncated" in warning for warning in result.warnings)
+
+    def test_embedded_phone_field_match_limit_warns(self) -> None:
+        mapper = ContactMapper()
+        many_numbers = " ".join("+1 202 555 1234" for _ in range(7))
+        result = mapper.map_payload(
+            {"notes": many_numbers},
+            extract_embedded_phones=True,
+        )
+        embedded_matches = [
+            match
+            for match in result.field_matches
+            if match.strategy == "embedded_phone"
+        ]
+        assert len(embedded_matches) == 5
+        assert any("for this field" in warning for warning in result.warnings)
+
+    def test_embedded_phone_payload_match_limit_warns(self) -> None:
+        mapper = ContactMapper()
+        many_numbers = " ".join("+1 202 555 1234" for _ in range(5))
+        payload = {f"blob_{idx}": many_numbers for idx in range(5)}
+        result = mapper.map_payload(payload, extract_embedded_phones=True)
+        embedded_matches = [
+            match
+            for match in result.field_matches
+            if match.strategy == "embedded_phone"
+        ]
+        assert len(embedded_matches) == 20
+        assert any("for this payload" in warning for warning in result.warnings)
 
 
 # ═══════════════════════════════════════════════════════════════

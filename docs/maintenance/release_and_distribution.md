@@ -10,6 +10,8 @@ RoloDexter is currently a Python package published on PyPI:
 - Current published version checked from PyPI: `2.8.0`
 - Local package version in `pyproject.toml`: `2.8.1` release candidate
 - Python requirement: `>=3.10`
+- NPM package source: `packages/js`
+- NPM package version: `0.1.0` pre-publish package candidate
 
 ## Release Policy
 
@@ -46,6 +48,16 @@ Before publishing a new version:
 
 5. Publish only after lint, tests, build, and metadata checks pass.
 
+For the JavaScript/TypeScript package:
+
+```powershell
+cd packages/js
+npm ci
+npm run typecheck
+npm test
+npm pack --dry-run
+```
+
 ## NPM Package Possibility
 
 Yes, RoloDexter can also become an NPM package, but the best path depends on the intended JavaScript audience.
@@ -62,7 +74,10 @@ Other options:
 - A thin NPM CLI wrapper around Python is faster to create, but it is less useful for browser/serverless users and requires Python at runtime.
 - A generated/WASM approach is possible, but probably too heavy for this package right now.
 
-If NPM distribution is pursued, add a separate `packages/js` or `npm/` workspace rather than mixing JavaScript build artifacts into the Python package root.
+The initial NPM package lives under `packages/js`. It syncs
+`src/rolodexter/patterns.json` before build so Python remains the canonical
+alias source in this repository. Publish it as `0.x` until behavior parity with
+the Python package is broad enough to share the same release version.
 
 ## Dependabot
 
@@ -78,7 +93,9 @@ Current Dependabot handling on 2026-06-28:
 - Merged PR #5: `actions/setup-python` from 5 to 6. Checks were green.
 - Merged PR #7: `actions/upload-artifact` from 4 to 7. Checks were green.
 - Merged PR #8: `codecov/codecov-action` from 4 to 7. Checks were green.
-- Left PR #9 open: `actions/checkout` from 4 to 7. It had failing Python test jobs and should not be merged until CI is understood and green.
+- Merged PR #9: `actions/checkout` from 4 to 7. The initial failures were from
+  mypy/dependency typing drift, not checkout itself; CI was fixed and rerun
+  green before merge.
 
 Dependabot rule of thumb:
 

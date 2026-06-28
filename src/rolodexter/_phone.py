@@ -340,9 +340,16 @@ class PhoneNumberMatcher:
             print(match.number.e164, match.start, match.end)
     """
 
-    def __init__(self, text: str, default_region: str | None = None):
+    def __init__(
+        self,
+        text: str,
+        default_region: str | None = None,
+        *,
+        max_matches: int | None = None,
+    ):
         self._text = text
         self._region = default_region
+        self._max_matches = None if max_matches is None else max(0, max_matches)
         self._matches: list[PhoneNumberMatch] | None = None
 
     def _find_all(self) -> list[PhoneNumberMatch]:
@@ -350,6 +357,8 @@ class PhoneNumberMatcher:
         # phonenumbers matcher requires a region; default to "US".
         region = self._region or "US"
         for m in _pn.PhoneNumberMatcher(self._text, region):
+            if self._max_matches is not None and len(results) >= self._max_matches:
+                break
             wrapped = _wrap(m.number, m.raw_string)
             results.append(
                 PhoneNumberMatch(

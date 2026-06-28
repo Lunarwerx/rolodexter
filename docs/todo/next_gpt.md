@@ -15,8 +15,8 @@ This is the restart list for the next RoloDexter maintenance stint.
   - Local fixes: remove the line-level ignores, add a config-level
     `nameparser.*` mypy override, avoid static pandas stub imports, and pin
     `numpy<2.5` in the dev extra for CI stability.
-  - Remaining: push the latest CI fix, update/rerun PR #9, and merge only after
-    the full CI matrix is green.
+  - Completed: PR #9 was updated, the full CI matrix passed, and the PR was
+    merged on 2026-06-28.
 
 - [x] Sync local branch with the remote main branch after the merged Dependabot PRs.
   - Merged already: PR #5 `actions/setup-python`, PR #7 `actions/upload-artifact`, PR #8 `codecov/codecov-action`.
@@ -63,59 +63,68 @@ This is the restart list for the next RoloDexter maintenance stint.
 
 ## NPM Package Track
 
-- [ ] Create a parallel JavaScript/TypeScript package plan.
-  - Preferred shape: a TypeScript package, likely under `packages/js` or `npm/`.
+- [x] Create a parallel JavaScript/TypeScript package plan.
+  - Preferred shape: a TypeScript package under `packages/js`.
   - Publish target: NPM.
   - Keep it parallel to the Python package, not tangled into `src/rolodexter`.
 
-- [ ] Extract or formalize shared canonical data.
+- [x] Extract or formalize shared canonical data.
   - The NPM package should use the same alias/pattern truth table as Python.
   - Avoid Python and JS maintaining separate drifting copies.
-  - Candidate shared source: `src/rolodexter/patterns.json`, possibly moved or mirrored into a package-neutral location.
+  - Done: `packages/js` syncs `src/rolodexter/patterns.json` before build and
+    tests that the JS registry sees the same canonical fields.
 
-- [ ] Define the initial NPM API.
-  - Likely equivalents:
+- [x] Define the initial NPM API.
+  - Implemented equivalents:
     - `ContactMapper`
-    - `identify(header, value?)`
+    - `identify(header, { value? })`
     - `mapPayload(payload, options?)`
     - `mapBatch(payloads, options?)`
+    - `mapStream(payloads, options?)`
     - `compileSchema(headers, options?)`
   - Ship TypeScript types from day one.
 
-- [ ] Decide how much behavior parity v1 needs.
-  - Easy first parity:
+- [x] Decide how much behavior parity v1 needs.
+  - Implemented first parity:
     - exact alias matching
     - normalized header matching
-    - heuristic email/URL/postal/date matching
+    - heuristic email/phone/URL/postal/date/social matching
     - list/tag normalization
     - confidence reporting
-  - Harder parity:
-    - phone parsing equivalent to Python `phonenumbers`
-    - fuzzy matching equivalent to `rapidfuzz`
-    - i18n cache generation/loading
+    - phone parsing via `libphonenumber-js`
+  - Deferred:
+    - fuzzy matching equivalent to Python `rapidfuzz`
+    - i18n cache generation/loading parity
 
-- [ ] Choose high-ROI JS dependencies.
-  - Evaluate phone parsing options such as `libphonenumber-js`.
-  - Evaluate fuzzy matching options such as `rapidfuzz` equivalents or a small maintained scorer.
-  - Keep the dependency surface modest.
+- [x] Choose high-ROI JS dependencies.
+  - Chosen: `libphonenumber-js` for phone parsing/formatting.
+  - Deferred: fuzzy matching package choice until parity tests are expanded.
+  - Dependency surface kept modest: one runtime dependency.
 
 - [ ] Add cross-language golden tests.
   - Shared fixtures should assert Python and TypeScript produce the same canonical mappings where both claim support.
-  - Start with CRM/contact examples already covered by Python tests.
+  - Started: JS tests assert the synced Python pattern table and cover core
+    parity cases. Next step is extracting the Python CRM corpora to shared
+    fixture JSON.
 
-- [ ] Add NPM build/test/release automation.
+- [x] Add NPM build/test/package-check automation.
   - `package.json`
   - `tsconfig.json`
   - test runner
-  - lint/format choice
+  - typecheck script
   - GitHub Actions jobs for JS tests
-  - NPM publish workflow, ideally versioned alongside PyPI when behavior is equivalent.
+  - Dependabot npm updates
+
+- [ ] Add NPM publish workflow.
+  - Add after NPM credentials or trusted publishing are configured.
+  - Keep `0.x` publishing separate from PyPI until broader behavior parity is
+    verified.
 
 ## Still Worth Doing From Verified Audit
 
 - [ ] Make CLI CSV/JSON processing truly streaming or explicitly bounded.
 - [ ] Add row-level CLI fault isolation, such as `--on-error fail|skip|quarantine`.
-- [ ] Bound embedded phone extraction CPU and memory.
+- [x] Bound embedded phone extraction CPU and memory.
 - [ ] Harden i18n generation against network stalls and worker failure propagation.
 - [ ] Revisit generic date and numeric-ID heuristics before changing behavior.
 - [ ] Prefer user cache for generated i18n files instead of package-local generated data.

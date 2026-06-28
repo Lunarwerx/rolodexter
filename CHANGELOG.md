@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Patch release candidate: correctness fixes, safer CLI/i18n behavior, and CI
 compatibility with current dependency/tooling resolutions.
 
+### Added
+
+- **Initial TypeScript/NPM package scaffold.** `packages/js` now builds a typed
+  `rolodexter` package with exact and normalized header matching, value-shape
+  heuristics, core value normalization, batch/stream/schema helpers, and tests.
+  It syncs the Python `patterns.json` table before build to avoid alias drift.
+
 ### Fixed
 
 - **List-valued fields now normalize consistently.** Python list values for
@@ -32,6 +39,9 @@ compatibility with current dependency/tooling resolutions.
   temp-file replacement.
 - **`PatternRegistry.all_aliases` no longer exposes mutable internals.** It
   keeps returning a `list[str]` for compatibility, but now returns a copy.
+- **Embedded phone extraction is bounded.** Opt-in free-text scanning now caps
+  scanned text length plus matches per field and payload, and records warnings
+  when those limits stop the scan.
 - **CI type checking no longer depends on line-level ignores for `nameparser`.**
   The untyped dependency is handled through mypy configuration so newer mypy
   releases do not fail on unused ignore comments.
@@ -45,7 +55,8 @@ compatibility with current dependency/tooling resolutions.
 
 - Added focused regressions for list normalization, schema/DataFrame threshold
   handling, atomic CLI output, read-only i18n cache discovery, and alias-list
-  immutability.
+  immutability. Added long-notes and match-limit coverage for embedded phone
+  extraction.
 
 ## [2.8.0] — 2026-05-28
 

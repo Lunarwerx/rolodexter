@@ -41,6 +41,11 @@ Kept items were rechecked against the current code before action. Items marked d
   - Done: read/discovery paths only inspect existing dirs; writes select an explicit writable dir and use temp-file replace. i18n dry-run no longer creates cache dirs.
   - Verification: `tests/test_i18n_cache_behavior.py`, i18n-focused tests, and full suite passed.
 
+- [x] Severity: 2/5 - Bound embedded phone extraction CPU and memory.
+  - Verified: extraction scanned full candidate strings and could materialize every `PhoneNumberMatcher` match.
+  - Done: opt-in embedded extraction now caps scanned text length, matches per field, and matches per payload, and emits `MappingResult.warnings` when limits stop scanning.
+  - Verification: regression tests in `tests/test_rolodexter.py`; full suite passed.
+
 - [x] Severity: 3/5 - Update README i18n wording to match cache-only runtime loading.
   - Verified: README still said mapper construction generated translations on demand.
   - Done: README now says caches must be generated first and mapper construction only loads cached aliases.
@@ -60,10 +65,6 @@ Kept items were rechecked against the current code before action. Items marked d
 - [ ] Severity: 1/5 - Add row-level CLI fault isolation.
   - Verified: one malformed JSONL row or strict normalization failure still aborts the whole import.
   - Next step: add `--on-error fail|skip|quarantine` with row numbers and tests. Atomic output already prevents partial target files on fail.
-
-- [ ] Severity: 2/5 - Bound embedded phone extraction CPU and memory.
-  - Verified: extraction scans all candidate strings and materializes all `PhoneNumberMatcher` matches.
-  - Next step: add maximum text length, maximum matches per field/payload, warning metadata for truncation, and long-notes tests.
 
 - [ ] Severity: 2/5 - Harden i18n generation against network stalls and worker failure propagation.
   - Verified: translation calls have no explicit timeout/retry budget and one failed worker can abort unrelated languages.

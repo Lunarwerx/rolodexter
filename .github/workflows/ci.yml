@@ -65,6 +65,34 @@ jobs:
           curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
           ./gitleaks detect --no-banner --redact --exit-code 1
 
+  test-js:
+    name: Test (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: packages/js/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/js
+        run: npm ci
+
+      - name: Type check
+        working-directory: packages/js
+        run: npm run typecheck
+
+      - name: Test
+        working-directory: packages/js
+        run: npm test
+
+      - name: Pack check
+        working-directory: packages/js
+        run: npm pack --dry-run
+
   build:
     name: Build package
     runs-on: ubuntu-latest
