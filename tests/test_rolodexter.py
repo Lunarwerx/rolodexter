@@ -69,6 +69,12 @@ class TestLoading:
         assert len(registry.all_aliases) > 200
         assert len(registry.canonical_fields) >= 30
 
+    def test_all_aliases_returns_copy(self, registry: PatternRegistry) -> None:
+        aliases = registry.all_aliases
+        aliases.clear()
+        assert len(registry.all_aliases) > 200
+        assert registry.exact_lookup("fname") == "first_name"
+
     def test_version(self, registry: PatternRegistry) -> None:
         assert registry.version == "2.6.0"
 
@@ -769,6 +775,10 @@ class TestNormalizeValue:
     def test_non_string_passthrough(self) -> None:
         assert normalize_value("phone", 12345) == 12345
         assert normalize_value("email", None) is None
+        assert normalize_value("tags", [" vip ", "", "  ", "beta"]) == [
+            "vip",
+            "beta",
+        ]
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1722,9 +1732,9 @@ class TestI18nModule:
 
         dirs = get_all_cache_dirs()
         assert isinstance(dirs, list)
-        assert len(dirs) >= 1
         for d in dirs:
-            assert d.exists()
+            assert isinstance(d, Path)
+            assert d.is_dir()
 
     def test_package_i18n_dir(self) -> None:
         from rolodexter.i18n import _package_i18n_dir
@@ -1738,7 +1748,8 @@ class TestI18nModule:
         from rolodexter.i18n import _user_cache_dir
 
         d = _user_cache_dir()
-        assert d.is_dir()
+        assert isinstance(d, Path)
+        assert d.name == "i18n"
 
     # --- alias variant generation ---
 
@@ -3584,16 +3595,16 @@ class TestI18nCacheDirs:
 
         dirs = get_all_cache_dirs()
         assert isinstance(dirs, list)
-        assert len(dirs) >= 1
         for d in dirs:
             assert isinstance(d, Path)
+            assert d.is_dir()
 
     def test_user_cache_dir(self) -> None:
         from rolodexter.i18n import _user_cache_dir
 
         d = _user_cache_dir()
         assert isinstance(d, Path)
-        assert d.exists()
+        assert d.name == "i18n"
 
 
 class TestI18nAliasVariants:
@@ -4276,13 +4287,18 @@ class TestI18nCacheDirFallback:
     """Test cache dir fallback when package dir is not writable."""
 
     def test_user_cache_used_when_pkg_fails(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         from rolodexter.i18n import _user_cache_dir, get_cache_dir
 
-        monkeypatch.setattr("rolodexter.i18n._package_i18n_dir", lambda: None)
+        monkeypatch.setattr(
+            "rolodexter.i18n._package_i18n_write_candidate", lambda: None
+        )
+        monkeypatch.setattr("rolodexter.i18n.sys.platform", "linux")
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
         result = get_cache_dir()
         assert result == _user_cache_dir()
+        assert result.is_dir()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -4648,6 +4664,19 @@ class TestListNormalizer:
         mapper = ContactMapper()
         result = mapper.map_payload({"tags": ["a", "b", "c"]})
         assert result.normalized["tags"] == ["a", "b", "c"]
+
+    def test_tags_list_items_cleaned_in_map_payload(self) -> None:
+        mapper = ContactMapper()
+        result = mapper.map_payload({"tags": [" vip ", "", "  ", "beta"]})
+        assert result.normalized["tags"] == ["vip", "beta"]
+
+    def test_duplicate_tag_aliases_merge_flat_and_dedupe(self) -> None:
+        mapper = ContactMapper()
+        result = mapper.map_payload(
+            {"tags": "vip,beta", "contact": {"tag": "vip,gamma"}},
+            depth=2,
+        )
+        assert result.normalized["tags"] == ["vip", "beta", "gamma"]
 
 
 # ═══════════════════════════════════════════════════════════════

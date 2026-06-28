@@ -45,8 +45,10 @@ import json
 import os
 import re
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import suppress
 from datetime import datetime, timezone
 from importlib import resources
 from pathlib import Path
@@ -108,21 +110,25 @@ SUPPORTED_LANGUAGES: dict[str, tuple[str, str]] = {
 
 
 def _package_i18n_dir() -> Path | None:
-    """Return ``i18n/`` inside the installed package, if writable."""
+    """Return the package ``i18n/`` directory if it already exists."""
     try:
         pkg = resources.files("rolodexter")
         d = Path(str(pkg)) / "i18n"
-        d.mkdir(parents=True, exist_ok=True)
-        # Quick write-test — use missing_ok in case a parallel probe deleted it
-        probe = d / ".probe"
-        probe.write_text("ok")
-        probe.unlink(missing_ok=True)
-        return d
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None
+    return d if d.is_dir() else None
+
+
+def _package_i18n_write_candidate() -> Path | None:
+    """Return the package ``i18n/`` path as a possible write target."""
+    try:
+        pkg = resources.files("rolodexter")
+        return Path(str(pkg)) / "i18n"
     except Exception:  # pylint: disable=broad-exception-caught
         return None
 
 
-def _user_cache_dir() -> Path:
+def _user_cache_dir(*, create: bool = False) -> Path:
     """Platform-specific user-writable cache directory."""
     if sys.platform == "win32":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
@@ -131,26 +137,48 @@ def _user_cache_dir() -> Path:
     else:
         base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     d = base / "rolodexter" / "i18n"
-    d.mkdir(parents=True, exist_ok=True)
+    if create:
+        d.mkdir(parents=True, exist_ok=True)
     return d
 
 
+def _ensure_writable_cache_dir(path: Path) -> Path | None:
+    """Create *path* if needed and return it when it is writable."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None
+    if not path.is_dir() or not os.access(path, os.W_OK):
+        return None
+    return path
+
+
+def get_writable_cache_dir() -> Path:
+    """Return the best available writable i18n cache directory."""
+    pkg_dir = _package_i18n_write_candidate()
+    candidates = [pkg_dir] if pkg_dir is not None else []
+    candidates.append(_user_cache_dir())
+
+    for candidate in candidates:
+        cache_dir = _ensure_writable_cache_dir(candidate)
+        if cache_dir is not None:
+            return cache_dir
+    raise OSError("No writable i18n cache directory available")
+
+
 def get_cache_dir() -> Path:
-    """Return the best available i18n cache directory."""
-    pkg_dir = _package_i18n_dir()
-    if pkg_dir is not None:
-        return pkg_dir
-    return _user_cache_dir()
+    """Return the best available writable i18n cache directory."""
+    return get_writable_cache_dir()
 
 
 def get_all_cache_dirs() -> list[Path]:
-    """Return all directories that might contain cached i18n files."""
+    """Return existing directories that might contain cached i18n files."""
     dirs: list[Path] = []
     pkg_dir = _package_i18n_dir()
     if pkg_dir is not None:
         dirs.append(pkg_dir)
     user_dir = _user_cache_dir()
-    if user_dir.exists() and user_dir not in dirs:
+    if user_dir.is_dir() and user_dir not in dirs:
         dirs.append(user_dir)
     return dirs
 
@@ -342,10 +370,27 @@ def load_cached(lang_code: str) -> dict[str, Any] | None:
 def _write_cache(lang_data: dict[str, Any]) -> Path:
     """Write an i18n JSON file to the cache directory."""
     cache_dir = get_cache_dir()
+    cache_dir.mkdir(parents=True, exist_ok=True)
     path = cache_dir / f"{lang_data['language_code']}.json"
-    with open(path, "w", encoding="utf-8") as fh:
-        json.dump(lang_data, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=cache_dir,
+            prefix=f".{path.stem}.",
+            suffix=".tmp",
+            delete=False,
+        ) as fh:
+            tmp_path = Path(fh.name)
+            json.dump(lang_data, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+        os.replace(tmp_path, path)
+    except Exception:
+        if tmp_path is not None:
+            with suppress(OSError):
+                tmp_path.unlink(missing_ok=True)
+        raise
     return path
 
 
@@ -566,7 +611,12 @@ def main() -> None:  # pylint: disable=too-many-locals
         sys.exit(1)
 
     print(f"\nGenerating {len(target_codes)} language(s)...")
-    print(f"  Cache dir: {get_cache_dir()}\n")
+    if args.dry_run:
+        cache_dirs = get_all_cache_dirs()
+        cache_dir_text = ", ".join(str(d) for d in cache_dirs) if cache_dirs else "none"
+        print(f"  Existing cache dirs: {cache_dir_text}\n")
+    else:
+        print(f"  Cache dir: {get_cache_dir()}\n")
 
     def _process(code: str) -> tuple[str, dict[str, Any]]:
         return code, generate_language(
